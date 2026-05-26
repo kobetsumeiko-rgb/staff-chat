@@ -106,7 +106,7 @@ let pollInterval = null;
 function initials(name) { return name.charAt(0); }
 
 async function notionFetch(path, method, body) {
-  const res = await fetch('https://api.notion.com' + path, {
+  const res = await fetch('https://notion-proxy-chat.kobetsu-meiko.workers.dev/notion' + path, {
     method,
     headers: {
       'Authorization': 'Bearer ' + API_KEY,
