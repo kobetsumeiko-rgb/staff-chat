@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スタッフチャット</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif; background: #f0f0f0; height: 100vh; display: flex; align-items: center; justify-content: center; }
+#app { display: flex; height: 92vh; width: 98vw; max-width: 800px; border-radius: 12px; overflow: hidden; background: #fff; box-shadow: 0 4px 24px rgba(0,0,0,0.12); }
+#sidebar { width: 200px; border-right: 1px solid #e5e5e5; display: flex; flex-direction: column; background: #f7f7f7; }
+#sidebar-header { padding: 14px 12px 10px; font-size: 13px; font-weight: 600; color: #888; border-bottom: 1px solid #e5e5e5; }
+.tutor-btn { padding: 12px; cursor: pointer; font-size: 14px; color: #333; background: none; border: none; text-align: left; border-bottom: 1px solid #e5e5e5; display: flex; align-items: center; gap: 10px; width: 100%; transition: background 0.15s; }
+.tutor-btn:hover { background: #efefef; }
+.tutor-btn.active { background: #fff; font-weight: 600; }
+.avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+#chat-area { flex: 1; display: flex; flex-direction: column; }
+#chat-header { padding: 12px 16px; border-bottom: 1px solid #e5e5e5; display: flex; align-items: center; gap: 10px; background: #fff; }
+#chat-header-name { font-size: 15px; font-weight: 600; flex: 1; }
+#reset-btn { font-size: 11px; color: #bbb; background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+#reset-btn:hover { color: #888; background: #f0f0f0; }
+#messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; background: #fafafa; }
+.msg-wrap { display: flex; flex-direction: column; gap: 3px; }
+.msg-wrap.mine { align-items: flex-end; }
+.msg-wrap.theirs { align-items: flex-start; }
+.bubble { max-width: 240px; padding: 9px 13px; border-radius: 16px; font-size: 14px; line-height: 1.5; word-break: break-word; }
+.mine .bubble { background: #1D9E75; color: #fff; border-bottom-right-radius: 4px; }
+.theirs .bubble { background: #fff; color: #333; border-bottom-left-radius: 4px; border: 1px solid #e5e5e5; }
+.msg-meta { font-size: 11px; color: #aaa; display: flex; gap: 5px; align-items: center; }
+.read-check { color: #1D9E75; font-size: 11px; font-weight: 600; }
+#input-area { padding: 12px; border-top: 1px solid #e5e5e5; display: flex; gap: 8px; align-items: flex-end; background: #fff; }
+#msg-input { flex: 1; border: 1px solid #ddd; border-radius: 20px; padding: 9px 14px; font-size: 14px; resize: none; max-height: 100px; outline: none; font-family: inherit; background: #f7f7f7; }
+#msg-input:focus { border-color: #1D9E75; background: #fff; }
+#send-btn { width: 38px; height: 38px; border-radius: 50%; background: #1D9E75; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: opacity 0.15s; }
+#send-btn:hover { opacity: 0.85; }
+#send-btn svg { width: 18px; height: 18px; fill: #fff; }
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 10; }
+.modal { background: #fff; border-radius: 16px; padding: 28px 24px; width: 320px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); }
+.modal h2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+.modal p { font-size: 13px; color: #888; margin-bottom: 20px; line-height: 1.6; }
+.modal input { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 14px; outline: none; margin-bottom: 12px; font-family: inherit; }
+.modal input:focus { border-color: #1D9E75; }
+.modal-btn { width: 100%; padding: 12px; background: #1D9E75; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
+.modal-error { font-size: 13px; color: #e24b4a; margin-bottom: 10px; display: none; }
+.tutor-select-btn { width: 100%; padding: 11px 14px; margin-bottom: 8px; cursor: pointer; font-size: 14px; background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 10px; text-align: left; display: flex; align-items: center; gap: 10px; color: #333; }
+.tutor-select-btn:hover { background: #fff; border-color: #1D9E75; }
+#empty-msg { font-size: 13px; color: #bbb; text-align: center; padding: 40px 20px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div id="sidebar-header">講師一覧</div>
+    <div id="sidebar-list"></div>
+  </div>
+  <div id="chat-area">
+    <div id="chat-header">
+      <div class="avatar" id="chat-avatar" style="background:#eee;"></div>
+      <span id="chat-header-name" style="color:#bbb;">チャット相手を選んでください</span>
+      <button id="reset-btn" onclick="resetApiKey()">設定</button>
+    </div>
+    <div id="messages">
+      <div id="empty-msg">相手を選んでチャットを開始してください</div>
+    </div>
+    <div id="input-area">
+      <textarea id="msg-input" placeholder="メッセージを入力... (Enterで送信)" rows="1"></textarea>
+      <button id="send-btn">
+        <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="apikey-screen">
+  <div class="modal">
+    <h2>初期設定</h2>
+    <p>NotionのAPIキー（ntn_から始まる）を入力してください。一度入力すると次回から不要です。</p>
+    <input type="password" id="apikey-input" placeholder="ntn_..." />
+    <div class="modal-error" id="apikey-error">APIキーが正しくありません</div>
+    <button class="modal-btn" onclick="saveApiKey()">保存して続ける</button>
+  </div>
+</div>
+
+<div class="overlay" id="login-screen" style="display:none;">
+  <div class="modal">
+    <h2>スタッフチャット</h2>
+    <p>あなたの名前を選んでください</p>
+    <div id="tutor-list"></div>
+  </div>
+</div>
+<script>
+const DB_ID = '36c9977afea2804f8f25eb75ba258e8e';
+const NOTION_VERSION = '2022-06-28';
+const TUTORS = [
+  { name: '祐介', color: '#B5D4F4', text: '#0C447C' },
+  { name: '和子', color: '#F4C0D1', text: '#72243E' },
+  { name: '依知可', color: '#9FE1CB', text: '#085041' },
+  { name: '鷹聖', color: '#FAC775', text: '#633806' },
+];
+
+let API_KEY = localStorage.getItem('notion_api_key') || '';
+let currentUser = null;
+let currentPartner = null;
+let pollInterval = null;
+
+function initials(name) { return name.charAt(0); }
+
+async function notionFetch(path, method, body) {
+  const res = await fetch('https://api.notion.com' + path, {
+    method,
+    headers: {
+      'Authorization': 'Bearer ' + API_KEY,
+      'Notion-Version': NOTION_VERSION,
+      'Content-Type': 'application/json',
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  return res.json();
+}
+
+async function saveApiKey() {
+  const val = document.getElementById('apikey-input').value.trim();
+  if (!val.startsWith('ntn_') && !val.startsWith('secret_')) {
+    document.getElementById('apikey-error').style.display = 'block';
+    return;
+  }
+  API_KEY = val;
+  localStorage.setItem('notion_api_key', val);
+  document.getElementById('apikey-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  buildLoginScreen();
+}
+
+function resetApiKey() {
+  localStorage.removeItem('notion_api_key');
+  API_KEY = '';
+  document.getElementById('apikey-input').value = '';
+  document.getElementById('apikey-error').style.display = 'none';
+  document.getElementById('apikey-screen').style.display = 'flex';
+}
+
+async function sendMessage(text) {
+  const now = new Date().toISOString();
+  await notionFetch('/v1/pages', 'POST', {
+    parent: { database_id: DB_ID },
+    properties: {
+      '名前': { title: [{ text: { content: currentUser + '→' + currentPartner } }] },
+      'sender': { rich_text: [{ text: { content: currentUser } }] },
+      'message': { rich_text: [{ text: { content: text } }] },
+      'read_by': { rich_text: [{ text: { content: currentUser } }] },
+      'timestamp': { date: { start: now } },
+    }
+  });
+}
+
+async function fetchMessages() {
+  const filter = {
+    or: [
+      { and: [
+        { property: 'sender', rich_text: { equals: currentUser } },
+        { property: '名前', title: { contains: currentPartner } }
+      ]},
+      { and: [
+        { property: 'sender', rich_text: { equals: currentPartner } },
+        { property: '名前', title: { contains: currentUser } }
+      ]}
+    ]
+  };
+  const data = await notionFetch('/v1/databases/' + DB_ID + '/query', 'POST', {
+    filter,
+    sorts: [{ property: 'timestamp', direction: 'ascending' }],
+    page_size: 50
+  });
+  return data.results || [];
+}
+
+async function markAsRead(pages) {
+  for (const page of pages) {
+    const sender = page.properties.sender?.rich_text?.[0]?.text?.content;
+    const readBy = page.properties.read_by?.rich_text?.[0]?.text?.content || '';
+    if (sender === currentPartner && !readBy.includes(currentUser)) {
+      const newReadBy = readBy ? readBy + ',' + currentUser : currentUser;
+      await notionFetch('/v1/pages/' + page.id, 'PATCH', {
+        properties: {
+          'read_by': { rich_text: [{ text: { content: newReadBy } }] }
+        }
+      });
+    }
+  }
+}
+
+function formatTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+}
+
+function renderMessages(pages) {
+  const container = document.getElementById('messages');
+  document.getElementById('empty-msg').style.display = pages.length === 0 ? 'block' : 'none';
+  container.querySelectorAll('.msg-wrap').forEach(e => e.remove());
+  pages.forEach(page => {
+    const sender = page.properties.sender?.rich_text?.[0]?.text?.content || '';
+    const message = page.properties.message?.rich_text?.[0]?.text?.content || '';
+    const ts = page.properties.timestamp?.date?.start || '';
+    const readBy = page.properties.read_by?.rich_text?.[0]?.text?.content || '';
+    const isRead = readBy.includes(currentPartner);
+    const isMine = sender === currentUser;
+    const wrap = document.createElement('div');
+    wrap.className = 'msg-wrap ' + (isMine ? 'mine' : 'theirs');
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = message;
+    const meta = document.createElement('div');
+    meta.className = 'msg-meta';
+    const timeSpan = document.createElement('span');
+    timeSpan.textContent = formatTime(ts);
+    meta.appendChild(timeSpan);
+    if (isMine && isRead) {
+      const check = document.createElement('span');
+      check.className = 'read-check';
+      check.textContent = '既読';
+      meta.appendChild(check);
+    }
+    wrap.appendChild(bubble);
+    wrap.appendChild(meta);
+    container.appendChild(wrap);
+  });
+  container.scrollTop = container.scrollHeight;
+}
+
+async function loadChat() {
+  if (!currentPartner) return;
+  try {
+    const pages = await fetchMessages();
+    await markAsRead(pages);
+    renderMessages(pages);
+  } catch(e) { console.error(e); }
+}
+
+function selectPartner(tutor) {
+  currentPartner = tutor.name;
+  document.querySelectorAll('.tutor-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + tutor.name).classList.add('active');
+  const avatar = document.getElementById('chat-avatar');
+  avatar.textContent = initials(tutor.name);
+  avatar.style.background = tutor.color;
+  avatar.style.color = tutor.text;
+  document.getElementById('chat-header-name').textContent = tutor.name;
+  document.getElementById('chat-header-name').style.color = '#333';
+  document.getElementById('empty-msg').style.display = 'block';
+  if (pollInterval) clearInterval(pollInterval);
+  loadChat();
+  pollInterval = setInterval(loadChat, 5000);
+}
+
+function buildSidebar() {
+  const list = document.getElementById('sidebar-list');
+  list.innerHTML = '';
+  TUTORS.filter(t => t.name !== currentUser).forEach(t => {
+    const btn = document.createElement('button');
+    btn.className = 'tutor-btn';
+    btn.id = 'btn-' + t.name;
+    const av = document.createElement('div');
+    av.className = 'avatar';
+    av.textContent = initials(t.name);
+    av.style.background = t.color;
+    av.style.color = t.text;
+    btn.appendChild(av);
+    btn.appendChild(document.createTextNode(t.name));
+    btn.onclick = () => selectPartner(t);
+    list.appendChild(btn);
+  });
+}
+
+function buildLoginScreen() {
+  const list = document.getElementById('tutor-list');
+  list.innerHTML = '';
+  TUTORS.forEach(t => {
+    const btn = document.createElement('button');
+    btn.className = 'tutor-select-btn';
+    const av = document.createElement('div');
+    av.className = 'avatar';
+    av.textContent = initials(t.name);
+    av.style.background = t.color;
+    av.style.color = t.text;
+    btn.appendChild(av);
+    btn.appendChild(document.createTextNode(t.name));
+    btn.onclick = () => {
+      currentUser = t.name;
+      document.getElementById('login-screen').style.display = 'none';
+      buildSidebar();
+    };
+    list.appendChild(btn);
+  });
+}
+
+document.getElementById('send-btn').onclick = async () => {
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if (!text || !currentPartner) return;
+  input.value = '';
+  input.style.height = 'auto';
+  await sendMessage(text);
+  await loadChat();
+};
+
+document.getElementById('msg-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    document.getElementById('send-btn').click();
+  }
+});
+
+document.getElementById('msg-input').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+});
+
+document.getElementById('apikey-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') saveApiKey();
+});
+
+if (API_KEY) {
+  document.getElementById('apikey-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  buildLoginScreen();
+}
+</script>
+</body>
+</html>
