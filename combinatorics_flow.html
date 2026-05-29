@@ -32,7 +32,6 @@ header p  { font-size: 12px; color: #888780; margin-top: 2px; }
 .panel { display: none; padding: 14px 12px 48px; }
 .panel.active { display: block; }
 
-/* ノード */
 .node-warn {
   background: #FAEEDA; border: 1px solid #BA7517;
   border-radius: 8px; padding: 11px 13px;
@@ -58,8 +57,8 @@ header p  { font-size: 12px; color: #888780; margin-top: 2px; }
 .q2-hint {
   font-size: 10px; color: #5f5e5a;
   background: #f5f4ef; border: 0.5px solid #d3d1c7;
-  border-radius: 6px; padding: 6px 9px; margin-top: 4px;
-  line-height: 1.7; width: 100%;
+  border-radius: 6px; padding: 7px 10px; margin-top: 4px;
+  line-height: 1.8; width: 100%;
 }
 .node-r {
   border-radius: 8px; padding: 9px 10px;
@@ -74,7 +73,6 @@ header p  { font-size: 12px; color: #888780; margin-top: 2px; }
 .r-purple { background:#EEEDFE; color:#3C3489; border-color:#7F77DD; }
 .r-coral  { background:#FAECE7; color:#712B13; border-color:#D85A30; }
 .r-pink   { background:#FBEAF0; color:#72243E; border-color:#D4537E; }
-.r-orange { background:#FAEEDA; color:#633806; border-color:#EF9F27; }
 .mono {
   font-family: "Courier New", monospace; font-size: 11px;
   display: inline-block; margin-top: 3px; padding: 1px 6px;
@@ -178,7 +176,6 @@ header p  { font-size: 12px; color: #888780; margin-top: 2px; }
   .r-purple { background:#26215C; color:#AFA9EC; }
   .r-coral  { background:#4A1B0C; color:#F0997B; }
   .r-pink   { background:#4B1528; color:#ED93B1; }
-  .r-orange { background:#412402; color:#FAC775; }
   .lbl-yes  { background: #04342C; }
   .lbl-no   { background: #412402; }
   .opt-btn.correct { background: #04342C; color: #5DCAA5; }
@@ -208,16 +205,24 @@ header p  { font-size: 12px; color: #888780; margin-top: 2px; }
 
   <!-- STEP -1 -->
   <div class="node-warn">
-    <strong style="font-size:12px;">STEP −1　まず「場合分け」が必要か確認する</strong><br>
-    以下のどれかに当てはまる → 公式に直接当てはめず、<strong>場合を分けて合計</strong>する
-    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;">
+    <strong style="font-size:12px;">STEP −1　まず「場合分け」と「条件処理」を確認する</strong><br>
+
+    <div style="margin-top:7px;font-weight:500;font-size:11px;color:#854F0B;">▶ 場合分けが必要なサイン（公式に直接当てはめず、ケースに分けて合計）</div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;">
       <span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#FAC775;color:#412402;border:0.5px solid #EF9F27;">同じ文字・物が含まれ、選ぶ個数が自由</span>
       <span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#FAC775;color:#412402;border:0.5px solid #EF9F27;">各位置・各人に個別の条件がある</span>
       <span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#FAC775;color:#412402;border:0.5px solid #EF9F27;">「〜以外」「〜でない」が複数ある</span>
     </div>
-    <div style="font-size:10px;margin-top:6px;color:#854F0B;">
-      例1：aaabcから3個選んで並べる → aを何個選ぶかで場合分け → 1+6+6 = 13通り<br>
-      例2：abcdを並べ各位置に「〜以外」条件 → 完全順列 → D(4) = 9通り
+    <div style="font-size:10px;margin-top:5px;color:#854F0B;">例：aaabcから3個選んで並べる → aを何個選ぶかで場合分け → 1+6+6=13通り<br>例：完全順列 → D(4)=9通り</div>
+
+    <div style="height:0.5px;background:#EF9F27;margin:9px 0;opacity:0.4;"></div>
+
+    <div style="font-weight:500;font-size:11px;color:#854F0B;">▶ 条件を先に処理してからフローへ</div>
+    <div style="font-size:10px;margin-top:5px;color:#854F0B;line-height:1.8;">
+      <span style="font-weight:500;">「最低○個」条件</span>　→　先に1個ずつ配ってしまい、残りを自由に振り分ける<br>
+      &nbsp;&nbsp;&nbsp;例：4種から合計10個、各種類1個以上 → 先に4個配る → 残り6個を自由に → ₄H₆=84通り<br>
+      <span style="font-weight:500;">「隣り合う」条件</span>　→　グループ化してひとかたまりとして扱う<br>
+      <span style="font-weight:500;">「含まない」条件</span>　→　全体から除外する（余事象）
     </div>
   </div>
 
@@ -255,13 +260,18 @@ header p  { font-size: 12px; color: #888780; margin-top: 2px; }
     <div class="col">
       <div class="lbl-yes">はい（順序あり）</div>
       <div class="arr"><div class="arr-line"></div><div class="arr-tip">↓</div></div>
-      <div class="node-q2">Q2　使う個数は自由に選べる？<br><span style="font-size:10px;font-weight:400;color:#888780;">「何個使うか自分で決める」→ はい</span></div>
-      <div class="q2-hint">
-        <span style="color:#185FA5;font-weight:500;">はい（個数が自由）：</span>重複順列<br>
-        例：0〜9で4桁パスコード。各桁を自由に選ぶ。<br>
-        <span style="color:#854F0B;font-weight:500;">いいえ（個数が固定）：</span>順列 or 同じものを含む順列<br>
-        例：最短経路。右5・上6と固定。選ぶ余地なし。
+
+      <div class="node-q2">
+        Q2　使う個数は自由に選べる？<br>
+        <span style="font-size:10px;font-weight:400;color:#888780;">「何個使うか自分で決める」→ はい</span>
       </div>
+      <div class="q2-hint">
+        <span style="color:#185FA5;font-weight:500;">【選ぶ主体で判断】</span><br>
+        「人が部屋を選ぶ」→ 人に注目。各人が部屋(n種)を自由に選ぶ → 重複順列 nʳ<br>
+        「ものが箱を選ぶ」→ ものに注目。各ものが行き先(n種)を自由に選ぶ → 重複順列 nʳ<br>
+        <span style="color:#854F0B;font-weight:500;">いいえ（個数固定）：</span>順列 or 同じものを含む順列
+      </div>
+
       <div style="display:flex;width:100%;margin:5px 0;">
         <div class="hline"></div><div style="width:1px;height:14px;background:#b4b2a9;"></div><div class="hline"></div>
       </div>
@@ -337,13 +347,19 @@ header p  { font-size: 12px; color: #888780; margin-top: 2px; }
     <div class="col">
       <div class="lbl-no">いいえ（順序なし）</div>
       <div class="arr"><div class="arr-line"></div><div class="arr-tip">↓</div></div>
-      <div class="node-q2">Q2　同じ種類を何個でも選べる？<br><span style="font-size:10px;font-weight:400;color:#888780;">「個数を自分で決める」→ はい</span></div>
-      <div class="q2-hint">
-        <span style="color:#185FA5;font-weight:500;">はい（個数自由）：</span>重複組合せ H<br>
-        例：3種のジュース合計5本。何本でもOK。<br>
-        <span style="color:#854F0B;font-weight:500;">いいえ（個数固定）：</span>組合せ C<br>
-        例：10人からちょうど3人を選ぶ。
+
+      <div class="node-q2">
+        Q2　同じ種類を何個でも選べる？<br>
+        <span style="font-size:10px;font-weight:400;color:#888780;">「個数を自分で決める」→ はい</span>
       </div>
+      <div class="q2-hint">
+        <span style="color:#D4537E;font-weight:500;">【箱と入れるものの発想】</span><br>
+        種類名（リンゴ・みかん…）＝<strong>箱の名前</strong>（区別できる）<br>
+        買う個数（1個・1個…）＝<strong>入れるもの</strong>（区別できない）<br>
+        → 区別できないものを区別できる箱に入れる → 重複組合せ H<br>
+        <span style="color:#854F0B;font-weight:500;">いいえ（個数固定）：</span>組合せ C
+      </div>
+
       <div style="display:flex;width:100%;margin:5px 0;">
         <div class="hline"></div><div style="width:1px;height:14px;background:#b4b2a9;"></div><div class="hline"></div>
       </div>
@@ -363,11 +379,7 @@ header p  { font-size: 12px; color: #888780; margin-top: 2px; }
 
   </div><!-- /row2 Q1 -->
 
-  <div class="note">
-    <strong>条件がある場合は先に処理：</strong>固定・除外・グループ化してからフローへ
-  </div>
-
-  <div id="detail" class="detail">
+  <div class="detail" id="detail">
     <button class="detail-close" onclick="document.getElementById('detail').style.display='none'">×</button>
     <h4 id="d-title"></h4>
     <div id="d-body"></div>
@@ -391,11 +403,10 @@ const details = {
   kumia:       { title:'組合せ（Combination） ₙCᵣ', body:'<strong>いつ使う？</strong> n個からr個を取り出す。順序なし・個数固定。<br><strong>STEP 0直行：</strong>「a₁ &lt; a₂ &lt; …」「相異なる整数を選ぶ」<br><strong>式：</strong> ₙCᵣ = n! / (r! × (n-r)!)' },
   en_jun:      { title:'円順列',                   body:'<strong>いつ使う？</strong> n人を円形に並べる。回転して同じ配置は同一。<br><strong>例：</strong> 5人を円卓に → (5-1)! = 24通り<br><strong>キーワード：</strong>「円卓」「輪になって」' },
   juzu:        { title:'数珠順列',                 body:'裏返しても同じとみなす。ネックレス・数珠。<br><strong>式：</strong> (n-1)! / 2' },
-  juhuku_jun:  { title:'重複順列',                 body:'<strong>いつ使う？</strong> n種類から「何個使うか自分で決めて」r個並べる。個数が自由なのがポイント。<br><strong>例：</strong> 0〜9の数字で4桁のパスコード → 各桁を自由に選ぶ → 10⁴<br><strong>式：</strong> nʳ' },
-  juhuku_kumi: { title:'重複組合せ（H） ₙHᵣ',     body:'<strong>いつ使う？</strong> n種類から「何個でもよい」条件でr個選ぶ。順序なし。<br><strong>STEP 0直行：</strong>「a₁ ≦ a₂ ≦ …（広義不等号）」<br><strong>式：</strong> ₙHᵣ = ₍ₙ₊ᵣ₋₁₎Cᵣ' },
-  doui:        { title:'同じものを含む順列',        body:'<strong>いつ使う？</strong> 個数が固定された同じ種類のものを一列に並べる。<br><strong>重複順列ではない理由：</strong>使う個数は決まっていて選ぶ自由がない。<br><strong>例：</strong> 最短経路（右5・上6）→ 11!/(5!×6!) = 462通り' },
+  juhuku_jun:  { title:'重複順列',                 body:'<strong>いつ使う？</strong> n種類から「何個使うか自分で決めて」r個並べる。<br><strong>【選ぶ主体の発想】</strong> 人が部屋を選ぶ・ものが箱を選ぶ → 各1回の選択が自由 → nʳ<br><strong>例：</strong> 3部屋に2人が入る → 各人が部屋を自由に選ぶ → 3² = 9通り<br><strong>例：</strong> 0〜9で4桁パスコード → 各桁を自由に選ぶ → 10⁴<br><strong>式：</strong> nʳ' },
+  juhuku_kumi: { title:'重複組合せ（H） ₙHᵣ',     body:'<strong>いつ使う？</strong> n種類から何個でもよい条件でr個選ぶ。順序なし。<br><strong>【箱と入れるものの発想】</strong><br>種類名（リンゴ・みかん…）= 箱の名前（区別できる）<br>買う個数（1個・1個…）= 入れるもの（区別できない）<br>→ 区別できないものを区別できる箱に配分する問題<br><strong>例：</strong> 4種の果物を合計10個買う → ₄H₁₀ = ₁₃C₃ = 286通り<br><strong>「最低○個」条件：</strong>先に1個ずつ配って残りをH<br><strong>式：</strong> ₙHᵣ = ₍ₙ₊ᵣ₋₁₎Cᵣ' },
+  doui:        { title:'同じものを含む順列',        body:'<strong>いつ使う？</strong> 個数が固定された同じ種類のものを一列に並べる。<br><strong>例：</strong> 最短経路（右5・上6）→ 11!/(5!×6!) = 462通り<br><strong>例：</strong> A,A,B,B,B,C を並べる → 6!/(2!×3!×1!) = 60通り' },
   en_juhuku:   { title:'円形の重複順列',           body:'円形かつ繰り返し（個数自由）の問題。<br><strong>例：</strong> 3色で4区画を塗り分ける（隣同色OK）→ 3⁴ = 81通り' },
-  baai_wake:   { title:'場合分けして合計',          body:'<strong>いつ使う？</strong> 同じ文字が含まれて選ぶ個数が自由、または各位置に個別条件がある場合。<br><strong>例1：</strong> aaabcから3個選んで並べる → aを0〜3個で場合分け → 1+6+6 = 13通り<br><strong>例2：</strong> abcdを並べ各位置に「〜以外」条件 → 完全順列 → D(4) = 9通り<br><strong>考え方：</strong> 各ケースを個別に計算して最後に合計する' },
 };
 
 function showD(key) {
@@ -410,38 +421,66 @@ function showD(key) {
 // ===== 問題集 =====
 const problems = [
   {
+    text:'柿・リンゴ・みかん・キウイの4種類から合計10個買う。買わない種類があってもよい。買い方は何通りか。',
+    topic:'重複組合せ（箱と入れるもの）', tc:'#FBEAF0', bc:'#D4537E', fc:'#72243E',
+    guide:[
+      { q:'Q1：並び順を区別する？', a:'いいえ（リンゴ3個みかん2個、の順番は意味がない）' },
+      { q:'Q2：個数を自由に決める？', a:'はい。各種類を何個でもOK' },
+      { q:'【箱と入れるものの発想】', a:'種類名＝箱の名前（区別できる）、買う1個1個＝入れるもの（区別できない） → 重複組合せH' },
+      { q:'式は？', a:'₄H₁₀ = ₁₃C₁₀ = ₁₃C₃ = 286' },
+    ],
+    choices:['286通り','210通り','120通り','715通り'], correct:0,
+    formula:'₄H₁₀ = ₁₃C₃ = 286',
+    steps:['種類(n=4)を箱、個数(r=10)を入れるものと考える','ₙHᵣ = ₍ₙ₊ᵣ₋₁₎Cᵣ に代入','₄H₁₀ = ₁₃C₁₀ = ₁₃C₃ = 286通り'],
+    answer:'286通り'
+  },
+  {
+    text:'柿・リンゴ・みかん・キウイの4種類から合計10個買う。各種類を必ず1個以上買う。買い方は何通りか。',
+    topic:'重複組合せ（最低○個条件）', tc:'#FBEAF0', bc:'#D4537E', fc:'#72243E',
+    guide:[
+      { q:'STEP −1：条件処理が必要か？', a:'「各種類1個以上」= 最低○個条件 → 先に1個ずつ配る' },
+      { q:'先に配った後の残りは？', a:'10 − 4 = 6個。この6個を4種類に自由に振り分ける' },
+      { q:'式は？', a:'₄H₆ = ₉C₆ = ₉C₃ = 84' },
+    ],
+    choices:['84通り','286通り','126通り','210通り'], correct:0,
+    formula:'₄H₆ = ₉C₃ = 84',
+    steps:['各種類に先に1個ずつ配る（合計4個消費）','残り：10 − 4 = 6個を4種類に自由に振り分け','₄H₆ = ₉C₆ = ₉C₃ = 84通り'],
+    answer:'84通り'
+  },
+  {
+    text:'3つの部屋（A,B,C）に2人が分かれて入る入り方は何通りか。空室があってもよい。',
+    topic:'重複順列（選ぶ主体）', tc:'#E6F1FB', bc:'#378ADD', fc:'#185FA5',
+    guide:[
+      { q:'Q1：並び順を区別する？', a:'はい（1人目がA・2人目がBと、1人目がB・2人目がAは違う）' },
+      { q:'Q2：個数は自由？', a:'はい。各人がどの部屋に入るか自由に選ぶ' },
+      { q:'【選ぶ主体の発想】', a:'人が部屋を選ぶ → 各人が3部屋から1つ自由に選ぶ → 重複順列 nʳ' },
+      { q:'式は？', a:'3² = 9' },
+    ],
+    choices:['9通り','6通り','3通り','12通り'], correct:0,
+    formula:'3² = 9',
+    steps:['1人目の入る部屋：A,B,C の3通り','2人目の入る部屋：A,B,C の3通り','3 × 3 = 9通り'],
+    answer:'9通り'
+  },
+  {
     text:'a,a,a,b,c の5文字から3個を選んで並べる方法は何通りか。',
     topic:'場合分け', tc:'#FAEEDA', bc:'#BA7517', fc:'#854F0B',
     guide:[
       { q:'STEP −1：場合分けが必要か？', a:'同じ文字(a)が含まれ、選ぶ個数が自由 → 場合分け確定' },
       { q:'何で場合分けするか？', a:'aを何個選ぶか（0〜3個）で分ける' },
-      { q:'各ケースの計算は？', a:'ケース1(a×3)：1通り、ケース2(a×2)：6通り、ケース3(a×1)：6通り' },
+      { q:'各ケースの計算は？', a:'a×3：1通り、a×2：6通り、a×1：6通り、a×0：0通り' },
     ],
     choices:['12通り','13通り','18通り','15通り'], correct:1,
     formula:'1 + 6 + 6 = 13',
-    steps:['aを3個：「aaa」→ 3!/(3!) = 1通り','aを2個：残り1個はb or c の2種、並べ方3!/(2!)=3 → 2×3=6通り','aを1個：残りはbc、並べ方3!=6通り','aを0個：b,cしかなく3個選べない → 0通り','合計：1+6+6+0 = 13通り'],
+    steps:['aを3個：「aaa」→ 1通り','aを2個：残り1個はb or c の2種、並べ方3!/(2!)=3 → 6通り','aを1個：残りはbc、並べ方3!=6通り','合計：1+6+6 = 13通り'],
     answer:'13通り'
-  },
-  {
-    text:'a,b,c,dの4文字を1列に並べる。1文字目はa以外、2文字目はb以外、3文字目はc以外、4文字目はd以外になる並べ方は何通りか。',
-    topic:'完全順列', tc:'#E6F1FB', bc:'#378ADD', fc:'#185FA5',
-    guide:[
-      { q:'STEP −1：場合分けが必要か？', a:'各位置に「〜以外」という個別条件がある → 場合分け or 包除原理' },
-      { q:'どちらのアプローチが効率的？', a:'この問題は「完全順列」。包除原理の公式 D(n) が使える' },
-      { q:'D(4) の計算は？', a:'4! × (1 − 1 + 1/2 − 1/6 + 1/24) = 24 × 3/8 = 9' },
-    ],
-    choices:['9通り','15通り','12通り','6通り'], correct:0,
-    formula:'D(4) = 9',
-    steps:['全体の並べ方：4! = 24通り','包除原理：D(n) = n!(1 − 1/1! + 1/2! − 1/3! + 1/4!)','D(4) = 24 × (1 − 1 + 0.5 − 0.167 + 0.042)','= 24 × 0.375 = 9通り'],
-    answer:'9通り'
   },
   {
     text:'0 &lt; a₁ &lt; a₂ &lt; a₃ &lt; a₄ &lt; a₅ &lt; 9 を満たす整数の組の個数を求めよ。',
     topic:'組合せ（STEP 0）', tc:'#EEEDFE', bc:'#7F77DD', fc:'#3C3489',
     guide:[
-      { q:'STEP −1：場合分けが必要か？', a:'不等号の構造問題 → 該当しない' },
       { q:'STEP 0：構造キーワードはある？', a:'「a₁ &lt; a₂ &lt; …」狭義不等号 → 組合せ C へ直行' },
       { q:'何を選ぶ問題か？', a:'1〜8の8個から5個選ぶ → ₈C₅' },
+      { q:'なぜ組合せ？', a:'5個選んだら自動的に小さい順に確定するから並び順を考える必要がない' },
     ],
     choices:['56通り','120通り','40通り','28通り'], correct:0,
     formula:'₈C₅ = 56',
@@ -452,9 +491,9 @@ const problems = [
     text:'右に5、上に6進んで目的地に到達する最短経路は何通りか。',
     topic:'同じものを含む順列', tc:'#FAEEDA', bc:'#BA7517', fc:'#854F0B',
     guide:[
-      { q:'STEP −1：場合分けが必要か？', a:'個数が固定（右5・上6）→ 該当しない' },
       { q:'Q1：並び順を区別する？', a:'はい（右上上 ≠ 上右上）' },
-      { q:'Q2：個数は自由に選べる？', a:'いいえ（右5・上6と固定）→ 同じものを含む順列へ' },
+      { q:'Q2：個数は自由に選べる？', a:'いいえ（右5・上6と固定）→ 重複順列ではない' },
+      { q:'同じ種類が複数？', a:'右が5個・上が6個 → 同じものを含む順列' },
     ],
     choices:['462通り','56通り','720通り','330通り'], correct:0,
     formula:'11! / (5! × 6!) = 462',
@@ -465,7 +504,6 @@ const problems = [
     text:'5人を円卓に座らせる方法は何通りか。',
     topic:'円順列', tc:'#FAEEDA', bc:'#BA7517', fc:'#854F0B',
     guide:[
-      { q:'STEP −1・0：該当しない', a:'Q1へ進む' },
       { q:'Q1〜Q3：円形に並べる？', a:'はい → 円順列' },
       { q:'公式は？', a:'(n-1)! = 4! = 24' },
     ],
@@ -473,19 +511,6 @@ const problems = [
     formula:'(5-1)! = 24',
     steps:['1人を固定して残り4人を並べる','4! = 24通り'],
     answer:'24通り'
-  },
-  {
-    text:'リンゴ・みかん・バナナの3種類から重複を許して合計4個を選ぶ組合せは何通りか。',
-    topic:'重複組合せ', tc:'#FBEAF0', bc:'#D4537E', fc:'#72243E',
-    guide:[
-      { q:'Q1：並び順を区別する？', a:'いいえ（選ぶだけ）' },
-      { q:'Q2：個数を自分で決める？', a:'はい（何個でもOK）→ 重複組合せ H' },
-      { q:'n と r は？', a:'n=3（種類）、r=4（合計個数）' },
-    ],
-    choices:['10通り','15通り','20通り','35通り'], correct:1,
-    formula:'₃H₄ = ₆C₄ = 15',
-    steps:['ₙHᵣ = ₍ₙ₊ᵣ₋₁₎Cᵣ に n=3, r=4 を代入','₃H₄ = ₆C₄ = 15通り'],
-    answer:'15通り'
   },
 ];
 
@@ -552,14 +577,38 @@ function goP(d) { cur = Math.max(0, Math.min(problems.length-1, cur+d)); renderP
 
 // ===== 公式集 =====
 const fms = [
-  { title:'場合分けして合計', tag:'直接当てはめ不可', tc:'#FAEEDA',bc:'#BA7517',fc:'#854F0B', sub:'同じものが含まれ個数自由、または各位置に個別条件がある場合', formula:'ケース1 + ケース2 + … = 合計', ex:'例：aaabcから3個並べる → 1+6+6 = 13通り\n例：完全順列 D(4) = 9通り' },
-  { title:'重複順列', tag:'順序あり・個数自由', tc:'#E6F1FB',bc:'#378ADD',fc:'#185FA5', sub:'n種類からr個を繰り返しを許して並べる（何個使うか自由）', formula:'nʳ', ex:'例：0〜9で4桁パスコード → 10⁴ = 10000' },
-  { title:'順列 ₙPᵣ', tag:'順序あり・個数固定・全異なる', tc:'#E1F5EE',bc:'#1D9E75',fc:'#0F6E56', sub:'n個からr個を取り出して一列に並べる', formula:'ₙPᵣ = n! / (n-r)!', ex:'例：5人から3人を1位〜3位に → ₅P₃ = 60' },
-  { title:'同じものを含む順列', tag:'順序あり・個数固定・同種あり', tc:'#FAEEDA',bc:'#BA7517',fc:'#854F0B', sub:'個数が固定された同種のものを一列に並べる', formula:'n! / (p! × q! × …)', ex:'例：最短経路（右5上6）→ 11!/(5!×6!) = 462\n例：A,A,B,B,B,C → 6!/(2!×3!) = 60' },
-  { title:'円順列', tag:'順序あり・円形', tc:'#FAEEDA',bc:'#BA7517',fc:'#854F0B', sub:'n人を円形に並べる（回転＝同一）', formula:'(n-1)!', ex:'例：5人を円卓に → 4! = 24' },
-  { title:'数珠順列', tag:'円形・裏返し同一', tc:'#FAECE7',bc:'#D85A30',fc:'#712B13', sub:'ネックレス・数珠。裏返しも同じとみなす', formula:'(n-1)! / 2', ex:'例：6ビーズのネックレス → 60' },
-  { title:'組合せ ₙCᵣ', tag:'順序なし・個数固定', tc:'#E6F1FB',bc:'#378ADD',fc:'#185FA5', sub:'n個からr個を取り出す（順序なし）', formula:'ₙCᵣ = n! / (r! × (n-r)!)', ex:'例：a₁＜a₂＜…の問題 → STEP 0で直行' },
-  { title:'重複組合せ ₙHᵣ', tag:'順序なし・個数自由', tc:'#FBEAF0',bc:'#D4537E',fc:'#72243E', sub:'n種類から何個でも選んでよい（順序なし）', formula:'ₙHᵣ = ₍ₙ₊ᵣ₋₁₎Cᵣ', ex:'例：a₁≦a₂≦…の問題 → STEP 0で直行' },
+  { title:'場合分けして合計', tag:'直接当てはめ不可', tc:'#FAEEDA',bc:'#BA7517',fc:'#854F0B',
+    sub:'同じものが含まれ個数自由、または各位置に個別条件がある場合',
+    formula:'ケース1 + ケース2 + … = 合計',
+    ex:'例：aaabcから3個並べる → 1+6+6 = 13通り\n例：完全順列 D(4) = 9通り' },
+  { title:'重複順列', tag:'順序あり・個数自由', tc:'#E6F1FB',bc:'#378ADD',fc:'#185FA5',
+    sub:'n種類からr個を繰り返しを許して並べる。各回の選択が自由。',
+    formula:'nʳ',
+    ex:'【選ぶ主体の発想】人が部屋を選ぶ・ものが行き先を選ぶ → nʳ\n例：3部屋に2人 → 3² = 9通り\n例：0〜9で4桁パスコード → 10⁴ = 10000' },
+  { title:'順列 ₙPᵣ', tag:'順序あり・個数固定・全異なる', tc:'#E1F5EE',bc:'#1D9E75',fc:'#0F6E56',
+    sub:'n個からr個を取り出して一列に並べる',
+    formula:'ₙPᵣ = n! / (n-r)!',
+    ex:'例：5人から3人を1位〜3位に → ₅P₃ = 60' },
+  { title:'同じものを含む順列', tag:'順序あり・個数固定・同種あり', tc:'#FAEEDA',bc:'#BA7517',fc:'#854F0B',
+    sub:'個数が固定された同種のものを一列に並べる',
+    formula:'n! / (p! × q! × …)',
+    ex:'例：最短経路（右5上6）→ 11!/(5!×6!) = 462\n例：A,A,B,B,B,C → 6!/(2!×3!) = 60' },
+  { title:'円順列', tag:'順序あり・円形', tc:'#FAEEDA',bc:'#BA7517',fc:'#854F0B',
+    sub:'n人を円形に並べる（回転＝同一）',
+    formula:'(n-1)!',
+    ex:'例：5人を円卓に → 4! = 24' },
+  { title:'数珠順列', tag:'円形・裏返し同一', tc:'#FAECE7',bc:'#D85A30',fc:'#712B13',
+    sub:'ネックレス・数珠。裏返しも同じとみなす',
+    formula:'(n-1)! / 2',
+    ex:'例：6ビーズのネックレス → 60' },
+  { title:'組合せ ₙCᵣ', tag:'順序なし・個数固定', tc:'#E6F1FB',bc:'#378ADD',fc:'#185FA5',
+    sub:'n個からr個を取り出す（順序なし）',
+    formula:'ₙCᵣ = n! / (r! × (n-r)!)',
+    ex:'例：a₁＜a₂＜…の問題 → STEP 0で直行' },
+  { title:'重複組合せ ₙHᵣ', tag:'順序なし・個数自由', tc:'#FBEAF0',bc:'#D4537E',fc:'#72243E',
+    sub:'n種類から何個でも選んでよい（順序なし）',
+    formula:'ₙHᵣ = ₍ₙ₊ᵣ₋₁₎Cᵣ',
+    ex:'【箱と入れるものの発想】種類名=箱、買う個数=入れるもの（区別なし）\n例：4種の果物を合計10個 → ₄H₁₀ = 286通り\n「最低○個」条件：先に配って残りをH → 例：各1個以上なら ₄H₆ = 84通り' },
 ];
 
 function renderFormulas() {
