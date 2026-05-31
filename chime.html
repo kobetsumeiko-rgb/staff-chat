@@ -1224,41 +1224,48 @@ function showToast(msg) {
 
 // ── 自動音声ファイル読み込み（同フォルダにchime.mp3/warn.mp3があれば） ──
 function tryAutoLoadAudio() {
+  // 音声ファイルの自動読み込み（対応ブラウザのみ）
+  if (!window.fetch) return;
   var ctx = getCtx();
-  var files = [
+  var targets = [
     {key:'school', paths:['chime.mp3','chime.wav']},
     {key:'warn',   paths:['warn.mp3','warn.wav']}
   ];
-  files.forEach(function(f) {
-    function tryNext(i) {
-      if (i >= f.paths.length) return;
-      fetch(f.paths[i]).then(function(res) {
-        if (!res.ok) { tryNext(i+1); return; }
-        return res.arrayBuffer().then(function(buf) {
-          return new Promise(function(resolve, reject) {
-            ctx.decodeAudioData(buf, resolve, reject);
-          });
-        }).then(function(audioBuf) {
-          customAudio[f.key] = audioBuf;
-          document.getElementById(f.key + '-filename').textContent = '✅ ' + f.paths[i] + '（自動読み込み）';
-          document.getElementById('clear-' + f.key).style.display = 'inline-flex';
-        });
-      }).catch(function() { tryNext(i+1); });
-    }
-    tryNext(0);
+  targets.forEach(function(f) {
+    var path = f.paths[0];
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', path, true);
+    xhr.responseType = 'arraybuffer';
+    xhr.onload = function() {
+      if (xhr.status !== 200) {
+        // .wavも試す
+        var xhr2 = new XMLHttpRequest();
+        xhr2.open('GET', f.paths[1], true);
+        xhr2.responseType = 'arraybuffer';
+        xhr2.onload = function() {
+          if (xhr2.status === 200) {
+            tryDecode(ctx, f.key, xhr2.response, f.paths[1]);
+          }
+        };
+        xhr2.send();
+        return;
+      }
+      tryDecode(ctx, f.key, xhr.response, path);
+    };
+    xhr.send();
   });
 }
+function tryDecode(ctx, key, buf, filename) {
+  try {
+    ctx.decodeAudioData(buf, function(audioBuf) {
+      customAudio[key] = audioBuf;
+      document.getElementById(key + '-filename').textContent = '✅ ' + filename + '（自動読み込み）';
+      document.getElementById('clear-' + key).style.display = 'inline-flex';
+    }, function() {});
+  } catch(e) {}
+}
 
-// ── 初期化 ──
-buildRoomSelect();
-buildPatternSelect();
-buildSchoolSelect();
-renderCalendar();
-renderRoomList();
-renderSchoolMasterList();
-
-// ページ読み込み後に自動音声読み込みを試みる
-window.addEventListener('load', () => { tryAutoLoadAudio().catch(() => {}); });
+window.addEventListener('load', function() { try { tryAutoLoadAudio(); } catch(e) {} });
 </script>
 </body>
 </html>
