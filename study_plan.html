@@ -68,6 +68,14 @@ tr.test-row>td.dc{background:#FAC775;}
 .legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
 .li{display:flex;align-items:center;gap:4px;font-size:11px;color:#993556;}
 .ld{width:9px;height:9px;border-radius:50%;}
+.use-check{width:16px;height:16px;cursor:pointer;accent-color:#D4537E;flex-shrink:0;}
+.subj-row.inactive{opacity:0.4;}
+.col-labels-inner{display:grid;grid-template-columns:20px 90px 80px 68px 8px 68px 26px;gap:4px;padding:0 8px 4px;font-size:10px;color:#0F6E56;}
+.subj-row-inner{display:grid;grid-template-columns:20px 90px 80px 68px 8px 68px 26px;gap:4px;align-items:center;padding:5px 8px;background:#fff;border-radius:20px;margin-bottom:5px;border:0.5px solid #9FE1CB;}
+.subj-row-inner select{border-radius:20px;border:0.5px solid #9FE1CB;background:#fff;color:#085041;font-size:12px;padding:4px 6px;height:30px;width:100%;outline:none;}
+.subj-row-inner input[type=text]{border-color:#9FE1CB;color:#085041;width:100%;}
+.subj-row-inner input[type=number]{border-color:#9FE1CB;color:#085041;width:100%;padding:4px 6px;text-align:right;}
+.subj-row-inner.inactive{opacity:0.38;}
 </style>
 </head>
 <body>
@@ -106,11 +114,12 @@ tr.test-row>td.dc{background:#FAC775;}
 
 <div class="card mint">
   <div class="sec-title">📚 科目・ページ範囲</div>
-  <div class="col-labels">
-    <span>科目</span><span>備考</span><span style="text-align:center;">開始p</span><span></span><span style="text-align:center;">終了p</span><span></span>
+  <p style="font-size:11px;color:#0F6E56;margin-bottom:8px;">使う科目にチェックを入れてください</p>
+  <div class="col-labels-inner">
+    <span></span><span>科目</span><span>備考</span><span style="text-align:center;">開始p</span><span></span><span style="text-align:center;">終了p</span><span></span>
   </div>
   <div id="subj-list"></div>
-  <button class="add-btn" id="add-subj-btn">＋ 科目を追加</button>
+  <button class="add-btn" id="add-subj-btn">＋ 行を追加</button>
 </div>
 
 <button class="gen-btn" id="gen-btn">✨ 計画を生成</button>
@@ -133,38 +142,50 @@ function makeSelect(id,val){
   return sel;
 }
 
-function addSubject(sname,note,f,t){
-  var id=++sid;subjects.push({id:id});
+function addSubject(sname,checked){
+  var id=++sid;
+  subjects.push({id:id});
   var list=document.getElementById('subj-list');
-  var div=document.createElement('div');div.className='subj-row';div.id='s'+id;
+  var div=document.createElement('div');
+  div.className='subj-row-inner'+(checked?'':' inactive');
+  div.id='s'+id;
+
+  var cb=document.createElement('input');
+  cb.type='checkbox';cb.className='use-check';cb.id='sc'+id;
+  cb.checked=!!checked;
+  (function(i,d){
+    cb.addEventListener('change',function(){
+      d.className='subj-row-inner'+(cb.checked?'':' inactive');
+    });
+  })(id,div);
+
   var sel=makeSelect(id,sname||SUBJECT_LIST[0]);
   var ni=document.createElement('input');ni.type='text';ni.placeholder='備考';ni.id='snote'+id;
-  if(note)ni.value=note;
   var fi=document.createElement('input');fi.type='number';fi.placeholder='開始';fi.min=1;fi.id='sf'+id;
-  if(f)fi.value=f;
   var sep=document.createElement('span');sep.textContent='〜';sep.className='sep';
   var ti=document.createElement('input');ti.type='number';ti.placeholder='終了';ti.min=1;ti.id='st'+id;
-  if(t)ti.value=t;
   var rb=document.createElement('button');rb.className='rm';rb.textContent='×';
-  (function(i){rb.addEventListener('click',function(){rmSubj(i);});})(id);
-  div.appendChild(sel);div.appendChild(ni);div.appendChild(fi);div.appendChild(sep);div.appendChild(ti);div.appendChild(rb);
+  (function(i){rb.addEventListener('click',function(){
+    subjects=subjects.filter(function(s){return s.id!==i;});
+    var el=document.getElementById('s'+i);if(el)el.remove();
+  });})(id);
+
+  div.appendChild(cb);div.appendChild(sel);div.appendChild(ni);
+  div.appendChild(fi);div.appendChild(sep);div.appendChild(ti);div.appendChild(rb);
   list.appendChild(div);
 }
 
-function rmSubj(id){
-  subjects=subjects.filter(function(s){return s.id!==id;});
-  var el=document.getElementById('s'+id);if(el)el.remove();
-}
-
 function getSubjs(){
-  var raw=subjects.map(function(s,i){
+  var raw=[];
+  subjects.forEach(function(s,i){
+    var cb=document.getElementById('sc'+s.id);
+    if(!cb||!cb.checked)return;
     var sname=document.getElementById('ss'+s.id).value;
     var note=document.getElementById('snote'+s.id).value;
     var fval=document.getElementById('sf'+s.id).value;
     var tval=document.getElementById('st'+s.id).value;
-    return{key:s.id,sname:sname,note:note,label:sname+(note?'('+note+')':''),
-      from:fval?parseInt(fval):null,
-      to:tval?parseInt(tval):null,origIdx:i};
+    raw.push({key:s.id,sname:sname,note:note,label:sname+(note?'('+note+')':''),
+      from:fval?parseInt(fval):null,to:tval?parseInt(tval):null,origIdx:i});
   });
   raw.sort(function(a,b){
     var ai=SUBJ_ORDER.indexOf(a.sname),bi=SUBJ_ORDER.indexOf(b.sname);
@@ -194,7 +215,7 @@ function generate(){
   var sd=new Date(sdVal+'T00:00:00'),td=new Date(tdVal+'T00:00:00');
   var subjs=getSubjs(),dowH=getDowH();
   if(sd>=td){alert('開始日はテスト日より前にしてください');return;}
-  if(subjs.length===0){alert('科目を追加してください');return;}
+  if(subjs.length===0){alert('チェックが入っている科目がありません');return;}
   for(var si=0;si<subjs.length;si++){
     var s=subjs[si];
     if(s.from===null||s.to===null){alert(s.sname+'のページ範囲を入力してください');return;}
@@ -230,32 +251,22 @@ function generate(){
     var pages=s.to-s.from+1;if(pages<=0)return;
     var fixedPPD=FIXED_PAGES[s.sname]||null;
     var cur=s.from;
-
     if(fixedPPD){
-      // 固定ページ数モード：1回につきfixedPPDページ、時間に応じて回数を増やす
       var totalSessions=Math.ceil(pages/fixedPPD);
-      var totalH2=totalStudyH;
-      var hPerSession=totalH2/totalSessions;
-      var accumH=0;
-      var sessionsDone=0;
+      var hPerSession=totalStudyH/totalSessions;
+      var accumH=0,sessionsDone=0;
       studyDays.forEach(function(d){
         if(cur>s.to)return;
         var k=fmt(d),h=plan[k].studyH;
         accumH+=h;
         var sessionsToday=Math.floor(accumH/hPerSession)-sessionsDone;
         sessionsToday=Math.max(1,sessionsToday);
-        var pagesToday=sessionsToday*fixedPPD;
-        var end=Math.min(cur+pagesToday-1,s.to);
-        // 4の倍数に丸める
-        var adjusted=cur+Math.round((end-cur+1)/fixedPPD)*fixedPPD-1;
-        end=Math.min(adjusted,s.to);
-        if(end<cur)end=Math.min(cur+fixedPPD-1,s.to);
+        var end=Math.min(cur+sessionsToday*fixedPPD-1,s.to);
         plan[k].tasks[s.key]={from:cur,to:end,bg:s.bg,tc:s.tc};
         sessionsDone+=Math.ceil((end-cur+1)/fixedPPD);
         cur=end+1;
       });
     } else {
-      // 通常モード：時間比例
       var pph=pages/totalStudyH;
       studyDays.forEach(function(d){
         if(cur>s.to)return;
@@ -335,10 +346,11 @@ function renderTable(plan,allDays,testDate,subjs){
   out.innerHTML=html;
 }
 
-document.getElementById('add-subj-btn').addEventListener('click',function(){addSubject();});
+document.getElementById('add-subj-btn').addEventListener('click',function(){addSubject('',false);});
 document.getElementById('gen-btn').addEventListener('click',function(){generate();});
 
-addSubject();
+var DEFAULTS=['現国','古文','数Ⅰ','数Ⅱ','数Ａ','英語論表','英語コミュ','化学','生物','地理','歴史','数Ｂ','数Ｃ'];
+DEFAULTS.forEach(function(s){addSubject(s,false);});
 
 var today=new Date();
 var sd=new Date(today);sd.setDate(today.getDate()+1);
