@@ -888,7 +888,7 @@ function showPopup(e, ds) {
   let h = `<div class="popup-title">${parseInt(m)}月${parseInt(d)}日の予定</div>`;
   dayEvs.forEach(ev => {
     const sn = ev.schoolIds?.length > 0
-      ? schools.filter(s => ev.schoolIds.includes(s.id)).map(shortName).join('・') : '全校共通';
+      ? schools.filter(s => ev.schoolIds.includes(s.id)).map(shortName).join('・') : '塾';
     const dateStr = ev.startDate === ev.endDate
       ? ev.startDate.replace(/-/g,'/')
       : `${ev.startDate.replace(/-/g,'/')}〜${ev.endDate.replace(/-/g,'/')}`;
@@ -928,7 +928,7 @@ function renderSchoolEvents() {
     h += `<div style="font-size:12px;font-weight:700;color:var(--text2);margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--border)">${y}年${parseInt(m)}月</div>`;
     groups[k].sort((a,b) => a.startDate.localeCompare(b.startDate)).forEach(ev => {
       const ds = ev.startDate === ev.endDate ? ev.startDate.replace(/-/g,'/') : `${ev.startDate.replace(/-/g,'/')}〜${ev.endDate.replace(/-/g,'/')}`;
-      const sn = ev.schoolIds?.length > 0 ? schools.filter(s => ev.schoolIds.includes(s.id)).map(shortName).join('・') : '全校共通';
+      const sn = ev.schoolIds?.length > 0 ? schools.filter(s => ev.schoolIds.includes(s.id)).map(shortName).join('・') : '塾';
       h += `<div class="ev-row"><span class="badge ${ev.type}">${TYPE_LABELS[ev.type]}</span><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500">${ev.label}</div><div style="font-size:11px;color:var(--text2);margin-top:2px">${ds}　${sn}</div></div><button class="btn sm" onclick="openEvEdit('${ev.id}')" style="margin-right:6px">編集</button><button class="btn sm danger" onclick="deleteEv('${ev.id}')">削除</button></div>`;
     });
   });
@@ -943,7 +943,7 @@ function buildEvSchoolChips(ev) {
   allChip.className = 'chip' + (allSel ? ' sel' : '');
   allChip.dataset.sid = '__all__';
   allChip.onclick = function() { toggleEvChip(this); };
-  allChip.textContent = '全校共通';
+  allChip.textContent = '塾';
   wrap.appendChild(allChip);
   schools.forEach(s => {
     const isSel = ev?.schoolIds?.includes(s.id);
