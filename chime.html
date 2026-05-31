@@ -443,14 +443,50 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 
     <!-- 学校予定 -->
     <div id="tab-schoolev" class="tab-content">
-      <div class="card">
-        <div class="card-title">学校予定の管理</div>
-        <div style="display:flex;align-items:flex-end;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-          <div class="form-row" style="margin:0;flex:1;min-width:160px">
-            <label>学校を選択</label>
-            <select id="schoolSelect" onchange="renderSchoolEvents()"></select>
+      <!-- 入力フォーム（常時表示） -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">予定を入力</div>
+        <div class="form-row">
+          <label>種別</label>
+          <select id="evType">
+            <option value="exam">定期テスト</option>
+            <option value="mock">模試</option>
+            <option value="test">検定</option>
+            <option value="closed">休校</option>
+            <option value="other">その他</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>内容</label>
+          <input type="text" id="evLabel" placeholder="例：前期中間テスト">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div class="form-row" style="margin:0">
+            <label>開始日</label>
+            <input type="date" id="evStart">
           </div>
-          <button class="btn primary" onclick="openEvModal()" style="flex-shrink:0;padding:9px 18px;font-size:14px">＋ 予定を追加</button>
+          <div class="form-row" style="margin:0">
+            <label>終了日</label>
+            <input type="date" id="evEnd">
+          </div>
+        </div>
+        <div class="form-row">
+          <label>対象学校</label>
+          <div class="chip-wrap" id="evSchoolChips"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px">
+          <button class="btn primary" id="evSaveBtn" onclick="saveEv()" style="flex:1;padding:10px;font-size:15px">保存する</button>
+          <button class="btn" id="evCancelBtn" onclick="cancelEvEdit()" style="display:none">キャンセル</button>
+        </div>
+      </div>
+      <!-- 一覧 -->
+      <div class="card">
+        <div class="card-title">
+          登録済みの予定
+          <div style="display:flex;align-items:center;gap:8px">
+            <label style="font-size:13px;color:var(--text2)">学校：</label>
+            <select id="schoolSelect" onchange="renderSchoolEvents()" style="width:160px"></select>
+          </div>
         </div>
         <div id="schoolEvList"></div>
       </div>
@@ -993,12 +1029,31 @@ function renderSchoolEvents() {
 function openEvModal(id) {
   editingEvId = id || null;
   var ev = id ? findById(events, id) : null;
-  document.getElementById('evModalTitle').textContent = ev ? '予定を編集' : '予定を追加';
   document.getElementById('evType').value  = ev ? ev.type  : 'exam';
   document.getElementById('evLabel').value = ev ? ev.label : '';
   var today = fmtDate(new Date());
   document.getElementById('evStart').value = ev ? ev.startDate : today;
   document.getElementById('evEnd').value   = ev ? ev.endDate   : today;
+  buildEvSchoolChips(ev);
+  // 編集モードの場合はキャンセルボタンを表示
+  document.getElementById('evCancelBtn').style.display = id ? 'inline-flex' : 'none';
+  document.getElementById('evSaveBtn').textContent = id ? '更新する' : '保存する';
+  // 学校予定タブが表示中なら先頭にスクロール
+  var tab = document.getElementById('tab-schoolev');
+  if (tab) tab.scrollTop = 0;
+}
+function cancelEvEdit() {
+  editingEvId = null;
+  document.getElementById('evType').value  = 'exam';
+  document.getElementById('evLabel').value = '';
+  var today = fmtDate(new Date());
+  document.getElementById('evStart').value = today;
+  document.getElementById('evEnd').value   = today;
+  buildEvSchoolChips(null);
+  document.getElementById('evCancelBtn').style.display = 'none';
+  document.getElementById('evSaveBtn').textContent = '保存する';
+}
+function buildEvSchoolChips(ev) {
   var wrap = document.getElementById('evSchoolChips');
   wrap.innerHTML = '';
   var allSel = !ev || !ev.schoolIds || ev.schoolIds.length === 0;
@@ -1017,7 +1072,6 @@ function openEvModal(id) {
     chip.textContent = shortName(schools[i]);
     wrap.appendChild(chip);
   }
-  document.getElementById('modalEv').style.display = 'flex';
 }
 function toggleEvChip(el) {
   var sid = el.getAttribute('data-sid');
@@ -1055,7 +1109,7 @@ function saveEv() {
     events.push({id: '' + Date.now(), type: type, label: label, startDate: startDate, endDate: endDate, schoolIds: schoolIds});
   }
   persist();
-  document.getElementById('modalEv').style.display = 'none';
+  cancelEvEdit();
   renderSchoolEvents(); renderCalendar(); showToast('保存しました');
 }
 function deleteEv(id) {
@@ -1302,7 +1356,7 @@ function switchTab(name, el) {
   }
   if (name === 'chime') renderSchedule();
   if (name === 'settings') { renderRoomList(); renderSchoolMasterList(); renderPatternEditor(); }
-  if (name === 'schoolev') { buildSchoolSelect(); renderSchoolEvents(); }
+  if (name === 'schoolev') { buildSchoolSelect(); renderSchoolEvents(); openEvModal(null); }
 }
 
 function showToast(msg) {
@@ -1353,6 +1407,13 @@ buildSchoolSelect();
 renderCalendar();
 renderRoomList();
 renderSchoolMasterList();
+// 学校予定フォームの初期化
+var _today = fmtDate(new Date());
+var _es = document.getElementById('evStart');
+var _ee = document.getElementById('evEnd');
+if (_es) _es.value = _today;
+if (_ee) _ee.value = _today;
+buildEvSchoolChips(null);
 window.addEventListener('load', function() { try { tryAutoLoadAudio(); } catch(e) {} });
 </script>
 </body>
