@@ -463,7 +463,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
           <div class="form-row" style="margin:0">
             <label>開始日</label>
-            <input type="date" id="evStart">
+            <input type="date" id="evStart" onchange="syncEndDate()">
           </div>
           <div class="form-row" style="margin:0">
             <label>終了日</label>
@@ -987,6 +987,14 @@ function cancelEvEdit() {
   buildEvSchoolChips(null);
   document.getElementById('evCancelBtn').style.display = 'none';
   document.getElementById('evSaveBtn').textContent = '保存する';
+}
+function syncEndDate() {
+  const start = document.getElementById('evStart').value;
+  const end   = document.getElementById('evEnd').value;
+  // 終了日が未入力、または終了日より開始日が後になった場合に自動セット
+  if (!end || end < start) {
+    document.getElementById('evEnd').value = start;
+  }
 }
 function saveEv() {
   const type      = document.getElementById('evType').value;
