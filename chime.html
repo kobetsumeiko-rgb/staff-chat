@@ -761,9 +761,12 @@ function playSynthWarn() {
     u.lang = 'ja-JP'; u.rate = .85; u.volume = 1; speechSynthesis.speak(u);
   }, 3200);
 }
-function playCustomAudio(buf) {
+function playCustomAudio(arrayBuf) {
   const ctx = getCtx(); if (ctx.state === 'suspended') ctx.resume();
-  const src = ctx.createBufferSource(); src.buffer = buf; src.connect(ctx.destination); src.start(ctx.currentTime + .05);
+  // ArrayBufferをコピーしてデコード（ArrayBufferは一度使うと消費されるため）
+  ctx.decodeAudioData(arrayBuf.slice(0), buf => {
+    const src = ctx.createBufferSource(); src.buffer = buf; src.connect(ctx.destination); src.start(ctx.currentTime + .05);
+  }, () => { playSynthChime(); });
 }
 function playSchoolChime() { customAudio.school ? playCustomAudio(customAudio.school) : playSynthChime(); }
 function playWarnChime()   { customAudio.warn   ? playCustomAudio(customAudio.warn)   : playSynthWarn(); }
@@ -771,15 +774,13 @@ function testChime(t) { t === 'school' ? playSchoolChime() : playWarnChime(); }
 
 function loadAudio(type, input) {
   const file = input.files[0]; if (!file) return;
-  const ctx = getCtx();
   const reader = new FileReader();
   reader.onload = e => {
-    ctx.decodeAudioData(e.target.result, buf => {
-      customAudio[type] = buf;
-      document.getElementById(`${type}-filename`).textContent = `✅ ${file.name}`;
-      document.getElementById(`clear-${type}`).style.display = 'inline-flex';
-      showToast('音声を設定しました');
-    }, () => showToast('読み込みに失敗しました'));
+    // ArrayBufferとして保持
+    customAudio[type] = e.target.result.slice(0);
+    document.getElementById(`${type}-filename`).textContent = `✅ ${file.name}`;
+    document.getElementById(`clear-${type}`).style.display = 'inline-flex';
+    showToast('音声を設定しました');
   };
   reader.readAsArrayBuffer(file); input.value = '';
 }
@@ -1223,21 +1224,26 @@ function showToast(msg) {
 
 // ── 音声自動読み込み ──
 function tryAutoLoadAudio() {
-  const ctx = getCtx();
+  // AudioContextを使わずArrayBufferのままで保持し、再生時にデコードする
   [['school','chime.mp3','chime.wav'],['warn','warn.mp3','warn.wav']].forEach(([key,...paths]) => {
-    paths.forEach(path => {
+    function tryNext(i) {
+      if (i >= paths.length) return;
       const xhr = new XMLHttpRequest();
-      xhr.open('GET', path, true); xhr.responseType = 'arraybuffer';
+      xhr.open('GET', paths[i], true); xhr.responseType = 'arraybuffer';
       xhr.onreadystatechange = function() {
-        if (xhr.readyState !== 4 || xhr.status !== 200) return;
-        ctx.decodeAudioData(xhr.response, buf => {
-          customAudio[key] = buf;
-          document.getElementById(`${key}-filename`).textContent = `✅ ${path}（自動読み込み）`;
+        if (xhr.readyState !== 4) return;
+        if (xhr.status === 200) {
+          // ArrayBufferをコピーして保持（AudioContextに依存しない）
+          customAudio[key] = xhr.response.slice(0);
+          document.getElementById(`${key}-filename`).textContent = `✅ ${paths[i]}（自動読み込み）`;
           document.getElementById(`clear-${key}`).style.display = 'inline-flex';
-        }, () => {});
+        } else {
+          tryNext(i + 1);
+        }
       };
       xhr.send();
-    });
+    }
+    tryNext(0);
   });
 }
 
