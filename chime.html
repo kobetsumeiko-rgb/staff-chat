@@ -761,12 +761,9 @@ function playSynthWarn() {
     u.lang = 'ja-JP'; u.rate = .85; u.volume = 1; speechSynthesis.speak(u);
   }, 3200);
 }
-function playCustomAudio(arrayBuf) {
-  const ctx = getCtx(); if (ctx.state === 'suspended') ctx.resume();
-  // ArrayBufferをコピーしてデコード（ArrayBufferは一度使うと消費されるため）
-  ctx.decodeAudioData(arrayBuf.slice(0), buf => {
-    const src = ctx.createBufferSource(); src.buffer = buf; src.connect(ctx.destination); src.start(ctx.currentTime + .05);
-  }, () => { playSynthChime(); });
+function playCustomAudio(blobUrl) {
+  const audio = new Audio(blobUrl);
+  audio.play().catch(() => {});
 }
 function playSchoolChime() { customAudio.school ? playCustomAudio(customAudio.school) : playSynthChime(); }
 function playWarnChime()   { customAudio.warn   ? playCustomAudio(customAudio.warn)   : playSynthWarn(); }
@@ -774,17 +771,16 @@ function testChime(t) { t === 'school' ? playSchoolChime() : playWarnChime(); }
 
 function loadAudio(type, input) {
   const file = input.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    // ArrayBufferとして保持
-    customAudio[type] = e.target.result.slice(0);
-    document.getElementById(`${type}-filename`).textContent = `✅ ${file.name}`;
-    document.getElementById(`clear-${type}`).style.display = 'inline-flex';
-    showToast('音声を設定しました');
-  };
-  reader.readAsArrayBuffer(file); input.value = '';
+  // BlobURLを作成して保持
+  const blobUrl = URL.createObjectURL(file);
+  customAudio[type] = blobUrl;
+  document.getElementById(`${type}-filename`).textContent = `✅ ${file.name}`;
+  document.getElementById(`clear-${type}`).style.display = 'inline-flex';
+  showToast('音声を設定しました');
+  input.value = '';
 }
 function clearAudio(type) {
+  if (customAudio[type]) { try { URL.revokeObjectURL(customAudio[type]); } catch(e) {} }
   customAudio[type] = null;
   document.getElementById(`${type}-filename`).textContent = type === 'school' ? '未設定（合成音を使用）' : '未設定（合成音＋音声読み上げを使用）';
   document.getElementById(`clear-${type}`).style.display = 'none';
@@ -1232,17 +1228,17 @@ function showToast(msg) {
 
 // ── 音声自動読み込み ──
 function tryAutoLoadAudio() {
-  // AudioContextを使わずArrayBufferのままで保持し、再生時にデコードする
+  // BlobURLを作成してAudio要素で再生する方式（AudioContextに依存しない）
   [['school','chime.mp3','chime.wav'],['warn','warn.mp3','warn.wav']].forEach(([key,...paths]) => {
     function tryNext(i) {
       if (i >= paths.length) return;
       const xhr = new XMLHttpRequest();
-      xhr.open('GET', paths[i], true); xhr.responseType = 'arraybuffer';
+      xhr.open('GET', paths[i], true); xhr.responseType = 'blob';
       xhr.onreadystatechange = function() {
         if (xhr.readyState !== 4) return;
         if (xhr.status === 200) {
-          // ArrayBufferをコピーして保持（AudioContextに依存しない）
-          customAudio[key] = xhr.response.slice(0);
+          const blobUrl = URL.createObjectURL(xhr.response);
+          customAudio[key] = blobUrl;
           document.getElementById(`${key}-filename`).textContent = `✅ ${paths[i]}（自動読み込み）`;
           document.getElementById(`clear-${key}`).style.display = 'inline-flex';
         } else {
