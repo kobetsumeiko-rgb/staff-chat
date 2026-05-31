@@ -866,7 +866,7 @@ function renderCalendar() {
       const nc = dow===0?'sun':dow===6?'sat':'';
       const bars = dayEvs.slice(0,3).map(ev => {
         const sn = ev.schoolIds?.length > 0
-          ? schools.filter(s => ev.schoolIds.includes(s.id)).map(shortName).join('・') : '全校';
+          ? schools.filter(s => ev.schoolIds.includes(s.id)).map(shortName).join('・') : '塾';
         const text = `${sn} ${ev.label}`;
         return `<div class="ev-bar ${ev.type}" onclick="showPopup(event,'${ds}')" title="${text}">${text}</div>`;
       }).join('');
