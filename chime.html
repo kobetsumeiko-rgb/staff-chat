@@ -444,13 +444,13 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
     <!-- 学校予定 -->
     <div id="tab-schoolev" class="tab-content">
       <div class="card">
-        <div class="card-title">
-          学校予定の管理
-          <button class="btn primary sm" onclick="openEvModal()">＋ 予定を追加</button>
-        </div>
-        <div class="form-row" style="margin-bottom:16px">
-          <label>学校を選択</label>
-          <select id="schoolSelect" onchange="renderSchoolEvents()" style="max-width:280px"></select>
+        <div class="card-title">学校予定の管理</div>
+        <div style="display:flex;align-items:flex-end;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+          <div class="form-row" style="margin:0;flex:1;min-width:160px">
+            <label>学校を選択</label>
+            <select id="schoolSelect" onchange="renderSchoolEvents()"></select>
+          </div>
+          <button class="btn primary" onclick="openEvModal()" style="flex-shrink:0;padding:9px 18px;font-size:14px">＋ 予定を追加</button>
         </div>
         <div id="schoolEvList"></div>
       </div>
