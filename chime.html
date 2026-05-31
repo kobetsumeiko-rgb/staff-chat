@@ -1006,12 +1006,20 @@ function renderRoomList() {
 }
 function openRoomModal(id) {
   editingRoomId = id || null;
-  const room = id ? rooms.find(r => r.id === id) : null;
+  var room = id ? rooms.find(function(r) { return r.id === id; }) : null;
   document.getElementById('roomModalTitle').textContent = room ? '教室を編集' : '教室を追加';
   document.getElementById('roomName').value = room ? room.name : '';
-  document.getElementById('roomSchoolChips').innerHTML = schools.map(s =>
-    `<span class="chip ${room&&room.schools.includes(s.id)?'sel':''}" data-sid="${s.id}" onclick="this.classList.toggle('sel')">${shortName(s)}</span>`
-  ).join('');
+  var wrap2 = document.getElementById('roomSchoolChips');
+  wrap2.innerHTML = '';
+  schools.forEach(function(s) {
+    var isSel = room && room.schools.indexOf(s.id) !== -1;
+    var chip = document.createElement('span');
+    chip.className = 'chip' + (isSel ? ' sel' : '');
+    chip.setAttribute('data-sid', s.id);
+    chip.onclick = function() { this.classList.toggle('sel'); };
+    chip.textContent = shortName(s);
+    wrap2.appendChild(chip);
+  });
   document.getElementById('modalRoom').style.display = 'flex';
 }
 function saveRoom() {
