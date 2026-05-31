@@ -673,11 +673,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 <div id="toast"></div>
 
 <script>
-// =====================================================
-// iOS 12対応：ES5ベースで全面書き直し
-// =====================================================
-
-var DEF_PATTERNS = [
+const DEF_PATTERNS = [
   { name: "パターン1（通常）", sessions: [
     {start:"09:00",end:"10:30"},{start:"10:40",end:"12:10"},{start:"13:10",end:"14:40"},
     {start:"14:50",end:"16:20"},{start:"16:30",end:"18:00"},{start:"18:10",end:"19:40"},{start:"19:50",end:"21:20"}
@@ -687,33 +683,29 @@ var DEF_PATTERNS = [
   { name: "パターン4", sessions: [{start:"09:00",end:"12:00"},{start:"13:00",end:"16:00"}] },
   { name: "パターン5", sessions: [{start:"15:00",end:"17:00"},{start:"17:30",end:"19:30"}] }
 ];
-var DEF_SCHOOLS = [
+const DEF_SCHOOLS = [
   {id:'s1',name:'裾花中学校'},{id:'s2',name:'川中島中学校'},{id:'s3',name:'小川中学校'},
   {id:'s4',name:'屋代中学校'},{id:'s5',name:'更埴西中学校'},{id:'s6',name:'埴生中学校'},{id:'s7',name:'戸倉上山田中学校'}
 ];
-var DEF_ROOMS = [
+const DEF_ROOMS = [
   {id:'r1',name:'安茂里教室',schools:['s1','s2','s3']},
   {id:'r2',name:'屋代教室',schools:['s4','s5','s6','s7']},
   {id:'r3',name:'その他教室',schools:[]}
 ];
 
-function loadJSON(key, def) {
-  try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : JSON.parse(JSON.stringify(def)); } catch(e) { return JSON.parse(JSON.stringify(def)); }
-}
-
-var patterns = loadJSON('juku_patterns', DEF_PATTERNS);
-var events   = loadJSON('juku_events', []);
-var schools  = loadJSON('juku_schools', DEF_SCHOOLS);
-var rooms    = loadJSON('juku_rooms', DEF_ROOMS);
-var currentRoomId = localStorage.getItem('juku_room') || rooms[0].id;
-var calFilter = 'all';
-var calYear, calMonth;
-var running = false, ticker = null, audioCtx = null;
-var customAudio = { school: null, warn: null };
-var editingEvId = null, editingRoomId = null;
-var activePopup = null;
-var firedToday = {};
-var n0 = new Date(); calYear = n0.getFullYear(); calMonth = n0.getMonth();
+let patterns = JSON.parse(localStorage.getItem('juku_patterns') || 'null') ?? JSON.parse(JSON.stringify(DEF_PATTERNS));
+let events   = JSON.parse(localStorage.getItem('juku_events')  || '[]');
+let schools  = JSON.parse(localStorage.getItem('juku_schools') || 'null') ?? JSON.parse(JSON.stringify(DEF_SCHOOLS));
+let rooms    = JSON.parse(localStorage.getItem('juku_rooms')   || 'null') ?? JSON.parse(JSON.stringify(DEF_ROOMS));
+let currentRoomId = localStorage.getItem('juku_room') || rooms[0].id;
+let calFilter = 'all';
+let calYear, calMonth;
+let running = false, ticker = null, audioCtx = null;
+let customAudio = { school: null, warn: null };
+let editingEvId = null, editingRoomId = null;
+let activePopup = null;
+let firedToday = {};
+const n0 = new Date(); calYear = n0.getFullYear(); calMonth = n0.getMonth();
 
 function persist() {
   try {
@@ -730,128 +722,92 @@ function getCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   return audioCtx;
 }
-function playTB(ctx, freq, t, vol) {
-  vol = vol || 0.5;
-  var partials = [
-    {r:1,a:1,d:4},{r:2.756,a:0.6,d:3.5},{r:5.404,a:0.3,d:2.5},{r:8.933,a:0.15,d:1.8},
-    {r:13.34,a:0.08,d:1.2},{r:18.64,a:0.04,d:0.8},{r:3.011,a:0.25,d:3},{r:6.71,a:0.12,d:2}
-  ];
-  for (var i = 0; i < partials.length; i++) {
-    var p = partials[i];
-    var o = ctx.createOscillator(), g = ctx.createGain();
-    var c = ctx.createOscillator(), cg = ctx.createGain();
+function playTB(ctx, freq, t, vol = 0.5) {
+  [{r:1,a:1,d:4},{r:2.756,a:.6,d:3.5},{r:5.404,a:.3,d:2.5},{r:8.933,a:.15,d:1.8},
+   {r:13.34,a:.08,d:1.2},{r:18.64,a:.04,d:.8},{r:3.011,a:.25,d:3},{r:6.71,a:.12,d:2}
+  ].forEach(p => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    const c = ctx.createOscillator(), cg = ctx.createGain();
     o.connect(g); g.connect(ctx.destination);
     c.connect(cg); cg.connect(ctx.destination);
     o.type = 'sine'; o.frequency.setValueAtTime(freq * p.r, t);
     g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(vol * p.a, t + 0.003);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + p.d);
-    o.start(t); o.stop(t + p.d + 0.1);
+    g.gain.linearRampToValueAtTime(vol * p.a, t + .003);
+    g.gain.exponentialRampToValueAtTime(.0001, t + p.d);
+    o.start(t); o.stop(t + p.d + .1);
     c.type = 'square'; c.frequency.value = freq * p.r * 2;
-    cg.gain.setValueAtTime(vol * p.a * 0.08, t);
-    cg.gain.exponentialRampToValueAtTime(0.0001, t + 0.015);
-    c.start(t); c.stop(t + 0.02);
-  }
+    cg.gain.setValueAtTime(vol * p.a * .08, t);
+    cg.gain.exponentialRampToValueAtTime(.0001, t + .015);
+    c.start(t); c.stop(t + .02);
+  });
 }
-var CHIME_SET = [
-  {f:659.25,t:0},{f:554.37,t:0.75},{f:587.33,t:1.45},{f:440,t:2.2},
+const CHIME_SET = [
+  {f:659.25,t:0},{f:554.37,t:.75},{f:587.33,t:1.45},{f:440,t:2.2},
   {f:440,t:3.2},{f:587.33,t:3.95},{f:659.25,t:4.65},{f:554.37,t:5.4}
 ];
 function playSynthChime() {
-  var ctx = getCtx(); if (ctx.state === 'suspended') ctx.resume();
-  var now = ctx.currentTime + 0.05;
-  for (var i = 0; i < CHIME_SET.length; i++) playTB(ctx, CHIME_SET[i].f, now + CHIME_SET[i].t, 0.55);
-  for (var j = 0; j < CHIME_SET.length; j++) playTB(ctx, CHIME_SET[j].f, now + 6.8 + CHIME_SET[j].t, 0.55);
+  const ctx = getCtx(); if (ctx.state === 'suspended') ctx.resume();
+  const now = ctx.currentTime + .05;
+  CHIME_SET.forEach(n => playTB(ctx, n.f, now + n.t, .55));
+  CHIME_SET.forEach(n => playTB(ctx, n.f, now + 6.8 + n.t, .55));
 }
 function playSynthWarn() {
-  var ctx = getCtx(); if (ctx.state === 'suspended') ctx.resume();
-  var now = ctx.currentTime + 0.05;
-  var wn = [[554.37,0],[587.33,0.6],[554.37,1.5],[587.33,2.1]];
-  for (var i = 0; i < wn.length; i++) playTB(ctx, wn[i][0], now + wn[i][1], 0.4);
-  setTimeout(function() {
+  const ctx = getCtx(); if (ctx.state === 'suspended') ctx.resume();
+  const now = ctx.currentTime + .05;
+  [[554.37,0],[587.33,.6],[554.37,1.5],[587.33,2.1]].forEach(([f,t]) => playTB(ctx, f, now + t, .4));
+  setTimeout(() => {
     if (!window.speechSynthesis) return;
-    var u = new SpeechSynthesisUtterance('授業終了10分前です。');
-    u.lang = 'ja-JP'; u.rate = 0.85; u.volume = 1; speechSynthesis.speak(u);
+    const u = new SpeechSynthesisUtterance('授業終了10分前です。');
+    u.lang = 'ja-JP'; u.rate = .85; u.volume = 1; speechSynthesis.speak(u);
   }, 3200);
 }
 function playCustomAudio(buf) {
-  var ctx = getCtx(); if (ctx.state === 'suspended') ctx.resume();
-  var src = ctx.createBufferSource(); src.buffer = buf; src.connect(ctx.destination); src.start(ctx.currentTime + 0.05);
+  const ctx = getCtx(); if (ctx.state === 'suspended') ctx.resume();
+  const src = ctx.createBufferSource(); src.buffer = buf; src.connect(ctx.destination); src.start(ctx.currentTime + .05);
 }
-function playSchoolChime() { if (customAudio.school) playCustomAudio(customAudio.school); else playSynthChime(); }
-function playWarnChime()   { if (customAudio.warn)   playCustomAudio(customAudio.warn);   else playSynthWarn(); }
-function testChime(t) { if (t === 'school') playSchoolChime(); else playWarnChime(); }
+function playSchoolChime() { customAudio.school ? playCustomAudio(customAudio.school) : playSynthChime(); }
+function playWarnChime()   { customAudio.warn   ? playCustomAudio(customAudio.warn)   : playSynthWarn(); }
+function testChime(t) { t === 'school' ? playSchoolChime() : playWarnChime(); }
 
-// 音声ファイル読み込み
 function loadAudio(type, input) {
-  var file = input.files[0]; if (!file) return;
-  var ctx = getCtx();
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    ctx.decodeAudioData(e.target.result, function(buf) {
+  const file = input.files[0]; if (!file) return;
+  const ctx = getCtx();
+  const reader = new FileReader();
+  reader.onload = e => {
+    ctx.decodeAudioData(e.target.result, buf => {
       customAudio[type] = buf;
-      document.getElementById(type + '-filename').textContent = '✅ ' + file.name;
-      document.getElementById('clear-' + type).style.display = 'inline-flex';
+      document.getElementById(`${type}-filename`).textContent = `✅ ${file.name}`;
+      document.getElementById(`clear-${type}`).style.display = 'inline-flex';
       showToast('音声を設定しました');
-    }, function() { showToast('読み込みに失敗しました'); });
+    }, () => showToast('読み込みに失敗しました'));
   };
-  reader.readAsArrayBuffer(file);
-  input.value = '';
+  reader.readAsArrayBuffer(file); input.value = '';
 }
 function clearAudio(type) {
   customAudio[type] = null;
-  document.getElementById(type + '-filename').textContent = type === 'school' ? '未設定（合成音を使用）' : '未設定（合成音＋音声読み上げを使用）';
-  document.getElementById('clear-' + type).style.display = 'none';
+  document.getElementById(`${type}-filename`).textContent = type === 'school' ? '未設定（合成音を使用）' : '未設定（合成音＋音声読み上げを使用）';
+  document.getElementById(`clear-${type}`).style.display = 'none';
   showToast('音声設定をクリアしました');
 }
 
 // ── ユーティリティ ──
-var TYPE_LABELS = {closed:'休校',exam:'定期テスト',mock:'模試',test:'検定',other:'その他'};
-function fmtDate(d) {
-  return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate());
-}
-function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+const TYPE_LABELS = {closed:'休校',exam:'定期テスト',mock:'模試',test:'検定',other:'その他'};
+const fmtDate = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 function dateRange(s, e) {
-  var arr = []; var d = new Date(s + 'T00:00:00'); var end = new Date(e + 'T00:00:00');
+  const arr = []; let d = new Date(s + 'T00:00:00'); const end = new Date(e + 'T00:00:00');
   while (d <= end) { arr.push(fmtDate(d)); d = new Date(d.getTime() + 86400000); }
   return arr;
 }
-function shortName(s) {
-  return s.name.replace('中学校','中').replace('高等学校','高').replace('小学校','小');
-}
-function currentRoom() {
-  for (var i = 0; i < rooms.length; i++) { if (rooms[i].id === currentRoomId) return rooms[i]; }
-  return rooms[0];
-}
-function findById(arr, id) {
-  for (var i = 0; i < arr.length; i++) { if (arr[i].id === id) return arr[i]; }
-  return null;
-}
-function indexById(arr, id) {
-  for (var i = 0; i < arr.length; i++) { if (arr[i].id === id) return i; }
-  return -1;
-}
-function arrayIncludes(arr, val) {
-  for (var i = 0; i < arr.length; i++) { if (arr[i] === val) return true; }
-  return false;
-}
-function filterArr(arr, fn) {
-  var out = []; for (var i = 0; i < arr.length; i++) { if (fn(arr[i])) out.push(arr[i]); }
-  return out;
-}
+const shortName = s => s.name.replace('中学校','中').replace('高等学校','高').replace('小学校','小');
+const currentRoom = () => rooms.find(r => r.id === currentRoomId) ?? rooms[0];
 
 // ── 教室セレクト ──
 function buildRoomSelect() {
-  var sel = document.getElementById('roomSelect');
-  var html = '';
-  for (var i = 0; i < rooms.length; i++) html += '<option value="' + rooms[i].id + '">' + rooms[i].name + '</option>';
-  sel.innerHTML = html;
+  const sel = document.getElementById('roomSelect');
+  sel.innerHTML = rooms.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
   sel.value = currentRoomId;
 }
-function onRoomChange() {
-  currentRoomId = document.getElementById('roomSelect').value;
-  calFilter = 'all'; persist(); renderCalendar();
-}
+function onRoomChange() { currentRoomId = document.getElementById('roomSelect').value; calFilter = 'all'; persist(); renderCalendar(); }
 
 // ── カレンダー ──
 function changeMonth(d) {
@@ -861,84 +817,60 @@ function changeMonth(d) {
   renderCalendar();
 }
 function evVisible(ev) {
-  var vs = currentRoom().schools;
-  var schoolOk = (!ev.schoolIds || ev.schoolIds.length === 0) || (function() {
-    for (var i = 0; i < ev.schoolIds.length; i++) { if (arrayIncludes(vs, ev.schoolIds[i])) return true; }
-    return false;
-  })();
-  if (!schoolOk) return false;
+  const vs = currentRoom().schools;
+  const ok = (!ev.schoolIds || ev.schoolIds.length === 0) || ev.schoolIds.some(sid => vs.includes(sid));
+  if (!ok) return false;
   if (calFilter === 'all') return true;
-  return (!ev.schoolIds || ev.schoolIds.length === 0) || arrayIncludes(ev.schoolIds, calFilter);
+  return (!ev.schoolIds || ev.schoolIds.length === 0) || ev.schoolIds.includes(calFilter);
 }
 function renderFilterBar() {
-  var rs = filterArr(schools, function(s) { return arrayIncludes(currentRoom().schools, s.id); });
-  var html = '<span class="filter-chip ' + (calFilter === 'all' ? 'active' : '') + '" onclick="setFilter(&quot;all&quot;)">すべて</span>';
-  for (var i = 0; i < rs.length; i++) {
-    html += '<span class="filter-chip ' + (calFilter === rs[i].id ? 'active' : '') + '" onclick="setFilter(&#39;&#39; + rs[i].id + &#39;&#39;)">' + shortName(rs[i]) + '</span>';
-  }
-  document.getElementById('filterBar').innerHTML = html;
+  const rs = schools.filter(s => currentRoom().schools.includes(s.id));
+  let h = `<span class="filter-chip ${calFilter==='all'?'active':''}" onclick="setFilter('all')">すべて</span>`;
+  rs.forEach(s => { h += `<span class="filter-chip ${calFilter===s.id?'active':''}" onclick="setFilter('${s.id}')">${shortName(s)}</span>`; });
+  document.getElementById('filterBar').innerHTML = h;
 }
 function setFilter(f) { calFilter = f; renderCalendar(); }
 
-function closePopup() { if (activePopup) { activePopup.parentNode && activePopup.parentNode.removeChild(activePopup); activePopup = null; } }
+function closePopup() { if (activePopup) { activePopup.remove(); activePopup = null; } }
 
 function renderCalendar() {
-  document.getElementById('monthLabel').textContent = calYear + '年' + (calMonth+1) + '月';
+  document.getElementById('monthLabel').textContent = `${calYear}年${calMonth+1}月`;
   renderFilterBar();
-  var y = calYear, m = calMonth;
-  var first = new Date(y,m,1), last = new Date(y,m+1,0), startDow = first.getDay();
-  var todayStr = fmtDate(new Date());
-  var monthPfx = y + '-' + pad2(m+1);
-  var dayMap = {};
-  for (var ei = 0; ei < events.length; ei++) {
-    var ev = events[ei];
-    if (!evVisible(ev)) continue;
-    var days = dateRange(ev.startDate, ev.endDate);
-    for (var di = 0; di < days.length; di++) {
-      if (days[di].indexOf(monthPfx) !== 0) continue;
-      if (!dayMap[days[di]]) dayMap[days[di]] = [];
-      var already = false;
-      for (var xi = 0; xi < dayMap[days[di]].length; xi++) { if (dayMap[days[di]][xi].id === ev.id) { already = true; break; } }
-      if (!already) dayMap[days[di]].push(ev);
-    }
-  }
-  var html = '';
-  var heads = ['日','月','火','水','木','金','土'];
-  for (var hi = 0; hi < heads.length; hi++) {
-    html += '<div class="cal-head ' + (hi===0?'sun':hi===6?'sat':'') + '">' + heads[hi] + '</div>';
-  }
-  var day = 1 - startDow;
-  for (var row = 0; row < 6; row++) {
-    for (var col = 0; col < 7; col++, day++) {
-      var date = new Date(y,m,day);
-      var dm = date.getMonth(), dd = date.getDate(), dy = date.getFullYear();
-      var ds = dy + '-' + pad2(dm+1) + '-' + pad2(dd);
-      var isToday = ds === todayStr, isOther = dm !== m, dow = date.getDay();
-      var dayEvs = dayMap[ds] || [];
-      var isClosed = false;
-      for (var ci = 0; ci < dayEvs.length; ci++) { if (dayEvs[ci].type === 'closed') { isClosed = true; break; } }
-      var cls = 'cal-day' + (isToday?' today':'') + (isOther?' other-month':'');
-      var bgStyle = isClosed && !isOther ? 'background:#fef0f0;' : '';
-      var nc = dow===0?'sun':dow===6?'sat':'';
-      var bars = '';
-      var maxBars = Math.min(dayEvs.length, 3);
-      for (var bi = 0; bi < maxBars; bi++) {
-        var bev = dayEvs[bi];
-        var sn = (bev.schoolIds && bev.schoolIds.length > 0)
-          ? (function(ids) {
-              var names = [];
-              for (var ni = 0; ni < ids.length; ni++) {
-                var sc = findById(schools, ids[ni]);
-                if (sc) names.push(shortName(sc));
-              }
-              return names.join('・');
-            })(bev.schoolIds)
-          : '全校';
-        var text = sn + ' ' + bev.label;
-        bars += '<div class="ev-bar ' + bev.type + '" onclick="showPopup(event,&#39;&#39; + ds + &#39;&#39;)" title="' + text + '">' + text + '</div>';
-      }
-      var more = dayEvs.length > 3 ? '<div style="font-size:9px;color:var(--text3);cursor:pointer" onclick="showPopup(event,&#39;&#39; + ds + &#39;&#39;)">他' + (dayEvs.length-3) + '件</div>' : '';
-      html += '<div class="' + cls + '" style="' + bgStyle + '"><div class="day-num ' + nc + '">' + dd + '</div>' + bars + more + '</div>';
+  const y = calYear, m = calMonth;
+  const first = new Date(y,m,1), last = new Date(y,m+1,0), startDow = first.getDay();
+  const todayStr = fmtDate(new Date());
+  const monthPfx = `${y}-${String(m+1).padStart(2,'0')}`;
+  const dayMap = {};
+  events.filter(ev => evVisible(ev)).forEach(ev => {
+    dateRange(ev.startDate, ev.endDate).filter(d => d.startsWith(monthPfx)).forEach(d => {
+      if (!dayMap[d]) dayMap[d] = [];
+      if (!dayMap[d].find(x => x.id === ev.id)) dayMap[d].push(ev);
+    });
+  });
+  let html = '';
+  ['日','月','火','水','木','金','土'].forEach((d,i) => {
+    html += `<div class="cal-head ${i===0?'sun':i===6?'sat':''}">${d}</div>`;
+  });
+  let day = 1 - startDow;
+  for (let row = 0; row < 6; row++) {
+    for (let col = 0; col < 7; col++, day++) {
+      const date = new Date(y,m,day);
+      const dm = date.getMonth(), dd = date.getDate(), dy = date.getFullYear();
+      const ds = `${dy}-${String(dm+1).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+      const isToday = ds === todayStr, isOther = dm !== m, dow = date.getDay();
+      const dayEvs = dayMap[ds] || [];
+      const isClosed = dayEvs.some(e => e.type === 'closed');
+      const cls = 'cal-day' + (isToday?' today':'') + (isOther?' other-month':'');
+      const bgStyle = isClosed && !isOther ? 'background:#fef0f0;' : '';
+      const nc = dow===0?'sun':dow===6?'sat':'';
+      const bars = dayEvs.slice(0,3).map(ev => {
+        const sn = ev.schoolIds?.length > 0
+          ? schools.filter(s => ev.schoolIds.includes(s.id)).map(shortName).join('・') : '全校';
+        const text = `${sn} ${ev.label}`;
+        return `<div class="ev-bar ${ev.type}" onclick="showPopup(event,'${ds}')" title="${text}">${text}</div>`;
+      }).join('');
+      const more = dayEvs.length > 3 ? `<div style="font-size:9px;color:var(--text3);cursor:pointer" onclick="showPopup(event,'${ds}')">他${dayEvs.length-3}件</div>` : '';
+      html += `<div class="${cls}" style="${bgStyle}"><div class="day-num ${nc}">${dd}</div>${bars}${more}</div>`;
     }
     if (day > last.getDate() && row >= 4) break;
   }
@@ -946,320 +878,254 @@ function renderCalendar() {
 }
 
 function showPopup(e, ds) {
-  e.stopPropagation();
-  closePopup();
-  var dayEvs = filterArr(events, function(ev) {
-    return evVisible(ev) && arrayIncludes(dateRange(ev.startDate, ev.endDate), ds);
-  });
+  e.stopPropagation(); closePopup();
+  const dayEvs = events.filter(ev => evVisible(ev) && dateRange(ev.startDate, ev.endDate).includes(ds));
   if (!dayEvs.length) return;
-  var popup = document.createElement('div');
+  const popup = document.createElement('div');
   popup.className = 'popup';
-  var parts = ds.split('-');
-  var h = '<div class="popup-title">' + parseInt(parts[1]) + '月' + parseInt(parts[2]) + '日の予定</div>';
-  for (var i = 0; i < dayEvs.length; i++) {
-    var ev = dayEvs[i];
-    var sn = (ev.schoolIds && ev.schoolIds.length > 0)
-      ? (function(ids) {
-          var names = [];
-          for (var ni = 0; ni < ids.length; ni++) { var sc = findById(schools, ids[ni]); if (sc) names.push(shortName(sc)); }
-          return names.join('・');
-        })(ev.schoolIds)
-      : '全校共通';
-    var dateStr = ev.startDate === ev.endDate
+  const [y,m,d] = ds.split('-');
+  let h = `<div class="popup-title">${parseInt(m)}月${parseInt(d)}日の予定</div>`;
+  dayEvs.forEach(ev => {
+    const sn = ev.schoolIds?.length > 0
+      ? schools.filter(s => ev.schoolIds.includes(s.id)).map(shortName).join('・') : '全校共通';
+    const dateStr = ev.startDate === ev.endDate
       ? ev.startDate.replace(/-/g,'/')
-      : ev.startDate.replace(/-/g,'/') + '〜' + ev.endDate.replace(/-/g,'/');
-    h += '<div class="popup-ev"><div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><span class="badge ' + ev.type + '">' + TYPE_LABELS[ev.type] + '</span><strong style="font-size:13px">' + ev.label + '</strong></div><div style="font-size:11px;color:var(--text2)">' + sn + '　' + dateStr + '</div></div>';
-  }
-  h += '<div style="text-align:right;margin-top:10px"><button class="btn sm" onclick="closePopup()">閉じる</button></div>';
+      : `${ev.startDate.replace(/-/g,'/')}〜${ev.endDate.replace(/-/g,'/')}`;
+    h += `<div class="popup-ev"><div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><span class="badge ${ev.type}">${TYPE_LABELS[ev.type]}</span><strong style="font-size:13px">${ev.label}</strong></div><div style="font-size:11px;color:var(--text2)">${sn}　${dateStr}</div></div>`;
+  });
+  h += `<div style="text-align:right;margin-top:10px"><button class="btn sm" onclick="closePopup()">閉じる</button></div>`;
   popup.innerHTML = h;
-  var rect = e.target.closest ? e.target.closest('.cal-day').getBoundingClientRect() : e.target.getBoundingClientRect();
+  const rect = e.target.closest('.cal-day').getBoundingClientRect();
   popup.style.position = 'fixed';
-  popup.style.top = (rect.bottom + 4) + 'px';
-  var left = rect.left;
+  popup.style.top = `${rect.bottom + 4}px`;
+  let left = rect.left;
   if (left + 300 > window.innerWidth) left = window.innerWidth - 308;
-  popup.style.left = Math.max(4, left) + 'px';
-  document.body.appendChild(popup);
-  activePopup = popup;
-  setTimeout(function() {
-    document.addEventListener('click', function handler(ev2) {
-      if (activePopup && !activePopup.contains(ev2.target)) { closePopup(); document.removeEventListener('click', handler); }
+  popup.style.left = `${Math.max(4, left)}px`;
+  document.body.appendChild(popup); activePopup = popup;
+  setTimeout(() => {
+    document.addEventListener('click', function h(ev) {
+      if (activePopup && !activePopup.contains(ev.target)) { closePopup(); document.removeEventListener('click', h); }
     });
   }, 100);
 }
 
 // ── 学校予定タブ ──
 function buildSchoolSelect() {
-  var sel = document.getElementById('schoolSelect');
-  var html = '';
-  for (var i = 0; i < schools.length; i++) html += '<option value="' + schools[i].id + '">' + schools[i].name + '</option>';
-  sel.innerHTML = html;
+  const sel = document.getElementById('schoolSelect');
+  sel.innerHTML = schools.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
 }
 function renderSchoolEvents() {
-  var sid = document.getElementById('schoolSelect').value;
-  var evs = filterArr(events, function(ev) {
-    return (!ev.schoolIds || ev.schoolIds.length === 0) || arrayIncludes(ev.schoolIds, sid);
-  });
-  var el = document.getElementById('schoolEvList');
+  const sid = document.getElementById('schoolSelect').value;
+  const evs = events.filter(ev => (!ev.schoolIds || ev.schoolIds.length === 0) || ev.schoolIds.includes(sid));
+  const el = document.getElementById('schoolEvList');
   if (!evs.length) { el.innerHTML = '<p style="color:var(--text3);font-size:13px;padding:8px 0">この学校の予定はありません</p>'; return; }
-  evs.sort(function(a,b) { return a.startDate < b.startDate ? -1 : 1; });
-  var groups = {};
-  for (var i = 0; i < evs.length; i++) {
-    var k = evs[i].startDate.slice(0,7);
-    if (!groups[k]) groups[k] = [];
-    groups[k].push(evs[i]);
-  }
-  var keys = Object.keys(groups).sort();
-  var h = '';
-  for (var ki = 0; ki < keys.length; ki++) {
-    var kk = keys[ki]; var kparts = kk.split('-');
-    h += '<div style="font-size:12px;font-weight:700;color:var(--text2);margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--border)">' + kparts[0] + '年' + parseInt(kparts[1]) + '月</div>';
-    var gevs = groups[kk];
-    for (var gi = 0; gi < gevs.length; gi++) {
-      var ev = gevs[gi];
-      var ds = ev.startDate === ev.endDate ? ev.startDate.replace(/-/g,'/') : ev.startDate.replace(/-/g,'/') + '〜' + ev.endDate.replace(/-/g,'/');
-      var snames = (ev.schoolIds && ev.schoolIds.length > 0)
-        ? (function(ids) { var n=[]; for(var ni=0;ni<ids.length;ni++){var sc=findById(schools,ids[ni]);if(sc)n.push(shortName(sc));} return n.join('・'); })(ev.schoolIds)
-        : '全校共通';
-      h += '<div class="ev-row"><span class="badge ' + ev.type + '">' + TYPE_LABELS[ev.type] + '</span><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500">' + ev.label + '</div><div style="font-size:11px;color:var(--text2);margin-top:2px">' + ds + '　' + snames + '</div></div><button class="btn sm" onclick="openEvModal(&#39;&#39; + ev.id + &#39;&#39;)" style="margin-right:6px">編集</button><button class="btn sm danger" onclick="deleteEv(&#39;&#39; + ev.id + &#39;&#39;)">削除</button></div>';
-    }
-  }
+  const groups = {};
+  evs.forEach(ev => { const k = ev.startDate.slice(0,7); if (!groups[k]) groups[k]=[]; groups[k].push(ev); });
+  let h = '';
+  Object.keys(groups).sort().forEach(k => {
+    const [y,m] = k.split('-');
+    h += `<div style="font-size:12px;font-weight:700;color:var(--text2);margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--border)">${y}年${parseInt(m)}月</div>`;
+    groups[k].sort((a,b) => a.startDate.localeCompare(b.startDate)).forEach(ev => {
+      const ds = ev.startDate === ev.endDate ? ev.startDate.replace(/-/g,'/') : `${ev.startDate.replace(/-/g,'/')}〜${ev.endDate.replace(/-/g,'/')}`;
+      const sn = ev.schoolIds?.length > 0 ? schools.filter(s => ev.schoolIds.includes(s.id)).map(shortName).join('・') : '全校共通';
+      h += `<div class="ev-row"><span class="badge ${ev.type}">${TYPE_LABELS[ev.type]}</span><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500">${ev.label}</div><div style="font-size:11px;color:var(--text2);margin-top:2px">${ds}　${sn}</div></div><button class="btn sm" onclick="openEvEdit('${ev.id}')" style="margin-right:6px">編集</button><button class="btn sm danger" onclick="deleteEv('${ev.id}')">削除</button></div>`;
+    });
+  });
   el.innerHTML = h;
 }
 
-function openEvModal(id) {
-  editingEvId = id || null;
-  var ev = id ? findById(events, id) : null;
-  document.getElementById('evType').value  = ev ? ev.type  : 'exam';
-  document.getElementById('evLabel').value = ev ? ev.label : '';
-  var today = fmtDate(new Date());
-  document.getElementById('evStart').value = ev ? ev.startDate : today;
-  document.getElementById('evEnd').value   = ev ? ev.endDate   : today;
+function buildEvSchoolChips(ev) {
+  const wrap = document.getElementById('evSchoolChips');
+  wrap.innerHTML = '';
+  const allSel = !ev || !ev.schoolIds || ev.schoolIds.length === 0;
+  const allChip = document.createElement('span');
+  allChip.className = 'chip' + (allSel ? ' sel' : '');
+  allChip.dataset.sid = '__all__';
+  allChip.onclick = function() { toggleEvChip(this); };
+  allChip.textContent = '全校共通';
+  wrap.appendChild(allChip);
+  schools.forEach(s => {
+    const isSel = ev?.schoolIds?.includes(s.id);
+    const chip = document.createElement('span');
+    chip.className = 'chip' + (isSel ? ' sel' : '');
+    chip.dataset.sid = s.id;
+    chip.onclick = function() { toggleEvChip(this); };
+    chip.textContent = shortName(s);
+    wrap.appendChild(chip);
+  });
+}
+function toggleEvChip(el) {
+  if (el.dataset.sid === '__all__') {
+    document.querySelectorAll('#evSchoolChips .chip').forEach(c => c.classList.toggle('sel', c.dataset.sid === '__all__'));
+  } else {
+    document.querySelector('#evSchoolChips [data-sid="__all__"]').classList.remove('sel');
+    el.classList.toggle('sel');
+  }
+}
+function openEvEdit(id) {
+  const ev = events.find(e => e.id === id);
+  if (!ev) return;
+  editingEvId = id;
+  document.getElementById('evType').value  = ev.type;
+  document.getElementById('evLabel').value = ev.label;
+  document.getElementById('evStart').value = ev.startDate;
+  document.getElementById('evEnd').value   = ev.endDate;
   buildEvSchoolChips(ev);
-  // 編集モードの場合はキャンセルボタンを表示
-  document.getElementById('evCancelBtn').style.display = id ? 'inline-flex' : 'none';
-  document.getElementById('evSaveBtn').textContent = id ? '更新する' : '保存する';
-  // 学校予定タブが表示中なら先頭にスクロール
-  var tab = document.getElementById('tab-schoolev');
-  if (tab) tab.scrollTop = 0;
+  document.getElementById('evCancelBtn').style.display = 'inline-flex';
+  document.getElementById('evSaveBtn').textContent = '更新する';
+  document.getElementById('tab-schoolev').scrollTop = 0;
+  window.scrollTo(0, 0);
 }
 function cancelEvEdit() {
   editingEvId = null;
   document.getElementById('evType').value  = 'exam';
   document.getElementById('evLabel').value = '';
-  var today = fmtDate(new Date());
+  const today = fmtDate(new Date());
   document.getElementById('evStart').value = today;
   document.getElementById('evEnd').value   = today;
   buildEvSchoolChips(null);
   document.getElementById('evCancelBtn').style.display = 'none';
   document.getElementById('evSaveBtn').textContent = '保存する';
 }
-function buildEvSchoolChips(ev) {
-  var wrap = document.getElementById('evSchoolChips');
-  wrap.innerHTML = '';
-  var allSel = !ev || !ev.schoolIds || ev.schoolIds.length === 0;
-  var allChip = document.createElement('span');
-  allChip.className = 'chip' + (allSel ? ' sel' : '');
-  allChip.setAttribute('data-sid', '__all__');
-  allChip.onclick = function() { toggleEvChip(this); };
-  allChip.textContent = '全校共通';
-  wrap.appendChild(allChip);
-  for (var i = 0; i < schools.length; i++) {
-    var isSel = ev && ev.schoolIds && arrayIncludes(ev.schoolIds, schools[i].id);
-    var chip = document.createElement('span');
-    chip.className = 'chip' + (isSel ? ' sel' : '');
-    chip.setAttribute('data-sid', schools[i].id);
-    chip.onclick = function() { toggleEvChip(this); };
-    chip.textContent = shortName(schools[i]);
-    wrap.appendChild(chip);
-  }
-}
-function toggleEvChip(el) {
-  var sid = el.getAttribute('data-sid');
-  if (sid === '__all__') {
-    var chips = document.getElementById('evSchoolChips').childNodes;
-    for (var i = 0; i < chips.length; i++) {
-      chips[i].className = 'chip' + (chips[i].getAttribute('data-sid') === '__all__' ? ' sel' : '');
-    }
-  } else {
-    document.querySelector('#evSchoolChips [data-sid="__all__"]').className = 'chip';
-    el.className = el.className.indexOf('sel') !== -1 ? 'chip' : 'chip sel';
-  }
-}
 function saveEv() {
-  var type  = document.getElementById('evType').value;
-  var label = document.getElementById('evLabel').value;
-  label = label.replace(/^\s+|\s+$/g, '');
-  var startDate = document.getElementById('evStart').value;
-  var endDate   = document.getElementById('evEnd').value || startDate;
+  const type      = document.getElementById('evType').value;
+  const label     = document.getElementById('evLabel').value.trim();
+  const startDate = document.getElementById('evStart').value;
+  const endDate   = document.getElementById('evEnd').value || startDate;
   if (!label || !startDate) { showToast('内容と開始日を入力してください'); return; }
   if (endDate < startDate)  { showToast('終了日は開始日以降にしてください'); return; }
-  var allChip = document.querySelector('#evSchoolChips [data-sid="__all__"]');
-  var schoolIds = [];
-  if (!allChip || allChip.className.indexOf('sel') === -1) {
-    var chips = document.getElementById('evSchoolChips').childNodes;
-    for (var i = 0; i < chips.length; i++) {
-      var csid = chips[i].getAttribute('data-sid');
-      if (csid !== '__all__' && chips[i].className.indexOf('sel') !== -1) schoolIds.push(csid);
-    }
+  const allChip = document.querySelector('#evSchoolChips [data-sid="__all__"]');
+  let schoolIds = [];
+  if (!allChip?.classList.contains('sel')) {
+    document.querySelectorAll('#evSchoolChips .chip.sel').forEach(c => { if (c.dataset.sid !== '__all__') schoolIds.push(c.dataset.sid); });
   }
   if (editingEvId) {
-    var ev = findById(events, editingEvId);
-    ev.type = type; ev.label = label; ev.startDate = startDate; ev.endDate = endDate; ev.schoolIds = schoolIds;
+    const ev = events.find(e => e.id === editingEvId);
+    Object.assign(ev, {type, label, startDate, endDate, schoolIds});
   } else {
-    events.push({id: '' + Date.now(), type: type, label: label, startDate: startDate, endDate: endDate, schoolIds: schoolIds});
+    events.push({id: Date.now().toString(), type, label, startDate, endDate, schoolIds});
   }
-  persist();
-  cancelEvEdit();
-  renderSchoolEvents(); renderCalendar(); showToast('保存しました');
+  persist(); cancelEvEdit(); renderSchoolEvents(); renderCalendar(); showToast('保存しました');
 }
 function deleteEv(id) {
   if (!confirm('この予定を削除しますか？')) return;
-  var newArr = [];
-  for (var i = 0; i < events.length; i++) { if (events[i].id !== id) newArr.push(events[i]); }
-  events = newArr; persist(); renderSchoolEvents(); renderCalendar(); showToast('削除しました');
+  events = events.filter(e => e.id !== id); persist(); renderSchoolEvents(); renderCalendar(); showToast('削除しました');
 }
 
 // ── 設定：教室 ──
 function renderRoomList() {
-  var el = document.getElementById('roomList');
-  var h = '';
-  for (var i = 0; i < rooms.length; i++) {
-    var r = rooms[i];
-    var sns = [];
-    for (var j = 0; j < r.schools.length; j++) { var sc = findById(schools, r.schools[j]); if (sc) sns.push(shortName(sc)); }
-    var sn = sns.length ? sns.join('・') : '（未設定）';
-    h += '<div class="ev-row"><div style="flex:1"><div style="font-size:14px;font-weight:500">' + r.name + '</div><div style="font-size:11px;color:var(--text2);margin-top:2px">' + sn + '</div></div><button class="btn sm" onclick="openRoomModal(&#39;&#39; + r.id + &#39;&#39;)" style="margin-right:6px">編集</button>' + (rooms.length > 1 ? '<button class="btn sm danger" onclick="deleteRoom(&#39;&#39; + r.id + &#39;&#39;)">削除</button>' : '') + '</div>';
-  }
-  el.innerHTML = h;
+  document.getElementById('roomList').innerHTML = rooms.map(r => {
+    const sn = r.schools.map(sid => { const s = schools.find(x => x.id === sid); return s ? shortName(s) : '?'; }).join('・') || '（未設定）';
+    return `<div class="ev-row"><div style="flex:1"><div style="font-size:14px;font-weight:500">${r.name}</div><div style="font-size:11px;color:var(--text2);margin-top:2px">${sn}</div></div><button class="btn sm" onclick="openRoomModal('${r.id}')" style="margin-right:6px">編集</button>${rooms.length > 1 ? `<button class="btn sm danger" onclick="deleteRoom('${r.id}')">削除</button>` : ''}</div>`;
+  }).join('');
 }
 function openRoomModal(id) {
   editingRoomId = id || null;
-  var room = id ? findById(rooms, id) : null;
+  const room = id ? rooms.find(r => r.id === id) : null;
   document.getElementById('roomModalTitle').textContent = room ? '教室を編集' : '教室を追加';
-  document.getElementById('roomName').value = room ? room.name : '';
-  var wrap = document.getElementById('roomSchoolChips');
+  document.getElementById('roomName').value = room?.name ?? '';
+  const wrap = document.getElementById('roomSchoolChips');
   wrap.innerHTML = '';
-  for (var i = 0; i < schools.length; i++) {
-    var isSel = room && arrayIncludes(room.schools, schools[i].id);
-    var chip = document.createElement('span');
+  schools.forEach(s => {
+    const isSel = room?.schools.includes(s.id);
+    const chip = document.createElement('span');
     chip.className = 'chip' + (isSel ? ' sel' : '');
-    chip.setAttribute('data-sid', schools[i].id);
-    chip.onclick = function() { this.className = this.className.indexOf('sel') !== -1 ? 'chip' : 'chip sel'; };
-    chip.textContent = shortName(schools[i]);
+    chip.dataset.sid = s.id;
+    chip.onclick = function() { this.classList.toggle('sel'); };
+    chip.textContent = shortName(s);
     wrap.appendChild(chip);
-  }
+  });
   document.getElementById('modalRoom').style.display = 'flex';
 }
 function saveRoom() {
-  var name = document.getElementById('roomName').value.replace(/^\s+|\s+$/g, '');
+  const name = document.getElementById('roomName').value.trim();
   if (!name) { showToast('教室名を入力してください'); return; }
-  var chips = document.getElementById('roomSchoolChips').childNodes;
-  var sc = [];
-  for (var i = 0; i < chips.length; i++) { if (chips[i].className.indexOf('sel') !== -1) sc.push(chips[i].getAttribute('data-sid')); }
-  if (editingRoomId) { var r = findById(rooms, editingRoomId); r.name = name; r.schools = sc; }
-  else rooms.push({id: 'r' + Date.now(), name: name, schools: sc});
+  const sc = [...document.querySelectorAll('#roomSchoolChips .chip.sel')].map(c => c.dataset.sid);
+  if (editingRoomId) { const r = rooms.find(x => x.id === editingRoomId); r.name = name; r.schools = sc; }
+  else rooms.push({id: 'r' + Date.now(), name, schools: sc});
   persist(); document.getElementById('modalRoom').style.display = 'none';
   renderRoomList(); buildRoomSelect(); showToast('保存しました');
 }
 function deleteRoom(id) {
   if (!confirm('この教室を削除しますか？')) return;
-  if (rooms.length <= 1) { showToast('最低1つ必要です'); return; }
-  var newArr = [];
-  for (var i = 0; i < rooms.length; i++) { if (rooms[i].id !== id) newArr.push(rooms[i]); }
-  rooms = newArr;
+  rooms = rooms.filter(r => r.id !== id);
   if (currentRoomId === id) currentRoomId = rooms[0].id;
   persist(); renderRoomList(); buildRoomSelect(); renderCalendar(); showToast('削除しました');
 }
 
 // ── 設定：学校マスタ ──
 function renderSchoolMasterList() {
-  var el = document.getElementById('schoolMasterList');
-  var h = '';
-  for (var i = 0; i < schools.length; i++) {
-    h += '<div class="ev-row"><span style="flex:1;font-size:14px">' + schools[i].name + '</span><button class="btn sm danger" onclick="deleteSchoolMaster(&#39;&#39; + schools[i].id + &#39;&#39;)">削除</button></div>';
-  }
-  el.innerHTML = h;
+  document.getElementById('schoolMasterList').innerHTML = schools.map(s =>
+    `<div class="ev-row"><span style="flex:1;font-size:14px">${s.name}</span><button class="btn sm danger" onclick="deleteSchoolMaster('${s.id}')">削除</button></div>`
+  ).join('');
 }
 function openSchoolMasterModal() {
   document.getElementById('schoolMasterName').value = '';
   document.getElementById('modalSchool').style.display = 'flex';
 }
 function saveSchoolMaster() {
-  var name = document.getElementById('schoolMasterName').value.replace(/^\s+|\s+$/g, '');
+  const name = document.getElementById('schoolMasterName').value.trim();
   if (!name) { showToast('学校名を入力してください'); return; }
-  schools.push({id: 's' + Date.now(), name: name}); persist();
+  schools.push({id: 's' + Date.now(), name}); persist();
   document.getElementById('modalSchool').style.display = 'none';
   renderSchoolMasterList(); buildSchoolSelect(); showToast('追加しました');
 }
 function deleteSchoolMaster(id) {
   if (!confirm('この学校を削除しますか？')) return;
-  var newArr = [];
-  for (var i = 0; i < schools.length; i++) { if (schools[i].id !== id) newArr.push(schools[i]); }
-  schools = newArr;
-  for (var ri = 0; ri < rooms.length; ri++) {
-    var newSc = [];
-    for (var si = 0; si < rooms[ri].schools.length; si++) { if (rooms[ri].schools[si] !== id) newSc.push(rooms[ri].schools[si]); }
-    rooms[ri].schools = newSc;
-  }
+  schools = schools.filter(s => s.id !== id);
+  rooms.forEach(r => { r.schools = r.schools.filter(x => x !== id); });
   persist(); renderSchoolMasterList(); buildSchoolSelect(); renderRoomList(); showToast('削除しました');
 }
 
 // ── チャイムスケジューラー ──
 function getPatternIdx() { return parseInt(document.getElementById('patternSelect').value) || 0; }
 function buildChimeEvents(p) {
-  var evts = [];
-  for (var i = 0; i < p.sessions.length; i++) {
-    var s = p.sessions[i];
-    var shm = s.start.split(':'); var ehm = s.end.split(':');
-    var sm2 = parseInt(shm[0])*60 + parseInt(shm[1]);
-    var em2 = parseInt(ehm[0])*60 + parseInt(ehm[1]);
-    evts.push({time: sm2,    type:'start', label:'授業開始（' + (i+1) + 'コマ目）'});
-    evts.push({time: em2-10, type:'warn',  label:'終了10分前（' + (i+1) + 'コマ目）'});
-    evts.push({time: em2,    type:'end',   label:'授業終了（' + (i+1) + 'コマ目）'});
-  }
-  evts.sort(function(a,b) { return a.time - b.time; });
-  return evts;
+  const evts = [];
+  p.sessions.forEach((s, i) => {
+    const [sh,sm] = s.start.split(':').map(Number), [eh,em] = s.end.split(':').map(Number);
+    const sm2 = sh*60+sm, em2 = eh*60+em;
+    evts.push({time: sm2,    type:'start', label:`授業開始（${i+1}コマ目）`});
+    evts.push({time: em2-10, type:'warn',  label:`終了10分前（${i+1}コマ目）`});
+    evts.push({time: em2,    type:'end',   label:`授業終了（${i+1}コマ目）`});
+  });
+  return evts.sort((a,b) => a.time - b.time);
 }
 function renderSchedule() {
-  var p = patterns[getPatternIdx()], evts = buildChimeEvents(p);
-  var nm = new Date().getHours()*60 + new Date().getMinutes();
-  var h = '';
-  for (var i = 0; i < evts.length; i++) {
-    var e = evts[i];
-    var hh = pad2(Math.floor(e.time/60)), mm = pad2(e.time%60), past = e.time < nm;
-    var b = e.type==='start'?'start':e.type==='end'?'end':'warn';
-    var bl = e.type==='start'?'開始':e.type==='end'?'終了':'10分前';
-    h += '<div class="sch-row" style="opacity:' + (past?0.4:1) + '"><span class="sch-time">' + hh + ':' + mm + '</span><span class="badge ' + b + '">' + bl + '</span><span style="color:var(--text2);flex:1">' + e.label + '</span>' + (past?'<span style="font-size:11px;color:var(--text3)">済</span>':'') + '</div>';
-  }
-  document.getElementById('scheduleList').innerHTML = h;
+  const p = patterns[getPatternIdx()], evts = buildChimeEvents(p);
+  const nm = new Date().getHours()*60 + new Date().getMinutes();
+  document.getElementById('scheduleList').innerHTML = evts.map(e => {
+    const h = String(Math.floor(e.time/60)).padStart(2,'0'), m = String(e.time%60).padStart(2,'0'), past = e.time < nm;
+    const b = e.type==='start'?'start':e.type==='end'?'end':'warn';
+    const bl = e.type==='start'?'開始':e.type==='end'?'終了':'10分前';
+    return `<div class="sch-row" style="opacity:${past?.4:1}"><span class="sch-time">${h}:${m}</span><span class="badge ${b}">${bl}</span><span style="color:var(--text2);flex:1">${e.label}</span>${past?'<span style="font-size:11px;color:var(--text3)">済</span>':''}</div>`;
+  }).join('');
 }
 function tick() {
-  var now = new Date(), nm = now.getHours()*60 + now.getMinutes(), ns = now.getSeconds();
-  var evts = buildChimeEvents(patterns[getPatternIdx()]);
+  const now = new Date(), nm = now.getHours()*60+now.getMinutes(), ns = now.getSeconds();
+  const evts = buildChimeEvents(patterns[getPatternIdx()]);
   if (ns === 0) {
-    for (var i = 0; i < evts.length; i++) {
-      var e = evts[i];
-      var k = now.toDateString() + '_' + e.time + '_' + e.type;
+    evts.forEach(e => {
+      const k = `${now.toDateString()}_${e.time}_${e.type}`;
       if (e.time === nm && !firedToday[k]) { firedToday[k] = true; fireChime(e); }
-    }
+    });
   }
-  var up = filterArr(evts, function(e) { return e.time > nm; });
+  const up = evts.filter(e => e.time > nm);
   if (up.length) {
-    var nx = up[0], df = nx.time - nm;
-    document.getElementById('countdown').textContent = pad2(Math.floor(df/60)) + ':' + pad2(df%60);
-    document.getElementById('nextInfo').textContent = pad2(Math.floor(nx.time/60)) + ':' + pad2(nx.time%60) + ' — ' + nx.label;
+    const nx = up[0], df = nx.time - nm;
+    document.getElementById('countdown').textContent = `${String(Math.floor(df/60)).padStart(2,'0')}:${String(df%60).padStart(2,'0')}`;
+    document.getElementById('nextInfo').textContent = `${String(Math.floor(nx.time/60)).padStart(2,'0')}:${String(nx.time%60).padStart(2,'0')} — ${nx.label}`;
   } else {
     document.getElementById('countdown').textContent = '--';
     document.getElementById('nextInfo').textContent = '本日のスケジュール終了';
   }
 }
 function fireChime(e) {
-  if (e.type === 'warn') playWarnChime(); else playSchoolChime();
-  showToast('🔔 ' + e.label);
+  e.type === 'warn' ? playWarnChime() : playSchoolChime();
+  showToast(`🔔 ${e.label}`);
 }
 function toggleScheduler() {
   running = !running;
-  var btn = document.getElementById('startBtn'), dot = document.getElementById('statusDot'), txt = document.getElementById('statusText');
+  const btn = document.getElementById('startBtn'), dot = document.getElementById('statusDot'), txt = document.getElementById('statusText');
   if (running) {
     btn.textContent = '⏹ 停止'; dot.className = 'status-dot active'; txt.textContent = '動作中';
     ticker = setInterval(tick, 1000); renderSchedule(); showToast('スケジューラーを開始しました');
@@ -1270,33 +1136,32 @@ function toggleScheduler() {
 }
 function loadPattern() { renderSchedule(); }
 function buildPatternSelect() {
-  var sel = document.getElementById('patternSelect');
-  var cur = sel.value;
-  var h = '';
-  for (var i = 0; i < patterns.length; i++) h += '<option value="' + i + '">' + patterns[i].name + '</option>';
-  sel.innerHTML = h;
+  const sel = document.getElementById('patternSelect'), cur = sel.value;
+  sel.innerHTML = patterns.map((p,i) => `<option value="${i}">${p.name}</option>`).join('');
   if (cur && cur < patterns.length) sel.value = cur;
   renderSchedule(); renderPatternEditor();
 }
 function renderPatternEditor() {
-  var h = '';
-  for (var pi = 0; pi < patterns.length; pi++) {
-    var p = patterns[pi];
-    h += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px">';
-    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><input type="text" value="' + p.name + '" oninput="patterns[' + pi + '].name=this.value;updateSelName(' + pi + ',this.value)" style="flex:1;font-weight:500">' + (patterns.length > 1 ? '<button class="btn sm danger" onclick="deletePattern(&quot; + pi + &quot;)">削除</button>' : '') + '</div>';
-    for (var si = 0; si < p.sessions.length; si++) {
-      var s = p.sessions[si];
-      h += '<div class="session-row"><div class="form-row" style="margin:0"><label>開始</label><input type="time" value="' + s.start + '" onchange="patterns[' + pi + '].sessions[' + si + '].start=this.value;persist();renderSchedule()"></div><div class="form-row" style="margin:0"><label>終了</label><input type="time" value="' + s.end + '" onchange="patterns[' + pi + '].sessions[' + si + '].end=this.value;persist();renderSchedule()"></div>' + (p.sessions.length > 1 ? '<button class="btn sm danger" onclick="removeSession(&#39; + pi + &#39;,&#39; + si + &#39;)" style="margin-top:18px">✕</button>' : '<div></div>') + '</div>';
-    }
-    h += '<button class="btn sm" onclick="addSession(&#39; + pi + &#39;)" style="margin-top:4px">＋ コマ追加</button></div>';
-  }
-  document.getElementById('patternEditor').innerHTML = h;
+  document.getElementById('patternEditor').innerHTML = patterns.map((p,pi) => `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <input type="text" value="${p.name}" oninput="patterns[${pi}].name=this.value;updateSelName(${pi},this.value)" style="flex:1;font-weight:500">
+        ${patterns.length > 1 ? `<button class="btn sm danger" onclick="deletePattern(${pi})">削除</button>` : ''}
+      </div>
+      ${p.sessions.map((s,si) => `
+        <div class="session-row">
+          <div class="form-row" style="margin:0"><label>開始</label><input type="time" value="${s.start}" onchange="patterns[${pi}].sessions[${si}].start=this.value;persist();renderSchedule()"></div>
+          <div class="form-row" style="margin:0"><label>終了</label><input type="time" value="${s.end}" onchange="patterns[${pi}].sessions[${si}].end=this.value;persist();renderSchedule()"></div>
+          ${p.sessions.length > 1 ? `<button class="btn sm danger" onclick="removeSession(${pi},${si})" style="margin-top:18px">✕</button>` : '<div></div>'}
+        </div>`).join('')}
+      <button class="btn sm" onclick="addSession(${pi})" style="margin-top:4px">＋ コマ追加</button>
+    </div>`).join('');
   document.getElementById('addPatBtn').disabled = patterns.length >= 5;
 }
 function updateSelName(idx, val) { document.getElementById('patternSelect').options[idx].text = val; persist(); }
 function addSession(pi) {
-  var last = patterns[pi].sessions[patterns[pi].sessions.length - 1];
-  patterns[pi].sessions.push({start: last ? last.end : '09:00', end: '10:30'});
+  const last = patterns[pi].sessions[patterns[pi].sessions.length - 1];
+  patterns[pi].sessions.push({start: last?.end ?? '09:00', end: '10:30'});
   persist(); renderPatternEditor(); renderSchedule();
 }
 function removeSession(pi, si) {
@@ -1305,7 +1170,7 @@ function removeSession(pi, si) {
 }
 function addPattern() {
   if (patterns.length >= 5) { showToast('最大5パターンまでです'); return; }
-  patterns.push({name: 'パターン' + (patterns.length+1), sessions: [{start:'09:00',end:'10:30'}]});
+  patterns.push({name: `パターン${patterns.length+1}`, sessions: [{start:'09:00',end:'10:30'}]});
   persist(); buildPatternSelect();
 }
 function deletePattern(pi) {
@@ -1315,89 +1180,65 @@ function deletePattern(pi) {
 
 // ── データ管理 ──
 function exportData() {
-  var data = {patterns: patterns, events: events, schools: schools, rooms: rooms, exportedAt: new Date().toISOString()};
-  var blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href = url; a.download = 'juku-data-' + fmtDate(new Date()) + '.json'; a.click();
+  const data = {patterns, events, schools, rooms, exportedAt: new Date().toISOString()};
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `juku-data-${fmtDate(new Date())}.json`; a.click();
   URL.revokeObjectURL(url); showToast('エクスポートしました');
 }
 function importData(input) {
-  var file = input.files[0]; if (!file) return;
-  var reader = new FileReader();
-  reader.onload = function(e) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
     try {
-      var data = JSON.parse(e.target.result);
+      const data = JSON.parse(e.target.result);
       if (!confirm('現在のデータをすべて上書きします。よろしいですか？')) return;
       if (data.patterns) patterns = data.patterns;
       if (data.events)   events   = data.events;
       if (data.schools)  schools  = data.schools;
       if (data.rooms)    rooms    = data.rooms;
-      persist();
-      buildRoomSelect(); buildPatternSelect(); buildSchoolSelect();
-      renderCalendar(); renderRoomList(); renderSchoolMasterList();
-      showToast('インポートしました');
+      persist(); buildRoomSelect(); buildPatternSelect(); buildSchoolSelect();
+      renderCalendar(); renderRoomList(); renderSchoolMasterList(); showToast('インポートしました');
     } catch(err) { showToast('読み込みに失敗しました'); }
   };
-  reader.readAsText(file);
-  input.value = '';
+  reader.readAsText(file); input.value = '';
 }
 
 // ── タブ切替 ──
 function switchTab(name, el) {
-  var tabs = ['calendar','schoolev','chime','audio','settings','data'];
-  for (var i = 0; i < tabs.length; i++) {
-    var t = document.getElementById('tab-' + tabs[i]);
-    if (t) t.className = 'tab-content' + (tabs[i] === name ? ' active' : '');
-  }
-  var navItems = document.querySelectorAll('.nav-item');
-  for (var ni = 0; ni < navItems.length; ni++) {
-    navItems[ni].className = navItems[ni] === el ? 'nav-item active' : 'nav-item';
-  }
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  el.classList.add('active');
   if (name === 'chime') renderSchedule();
   if (name === 'settings') { renderRoomList(); renderSchoolMasterList(); renderPatternEditor(); }
-  if (name === 'schoolev') { buildSchoolSelect(); renderSchoolEvents(); openEvModal(null); }
+  if (name === 'schoolev') { buildSchoolSelect(); renderSchoolEvents(); }
 }
 
 function showToast(msg) {
-  var t = document.getElementById('toast');
-  t.textContent = msg; t.className = 'show';
-  setTimeout(function() { t.className = ''; }, 2500);
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-// ── 音声自動読み込み（XHR） ──
+// ── 音声自動読み込み ──
 function tryAutoLoadAudio() {
-  var ctx = getCtx();
-  var targets = [
-    {key:'school', paths:['chime.mp3','chime.wav']},
-    {key:'warn',   paths:['warn.mp3','warn.wav']}
-  ];
-  for (var ti = 0; ti < targets.length; ti++) {
-    (function(f) {
-      function tryPath(idx) {
-        if (idx >= f.paths.length) return;
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', f.paths[idx], true);
-        xhr.responseType = 'arraybuffer';
-        xhr.onreadystatechange = function() {
-          if (xhr.readyState !== 4) return;
-          if (xhr.status === 200) {
-            try {
-              ctx.decodeAudioData(xhr.response, function(buf) {
-                customAudio[f.key] = buf;
-                document.getElementById(f.key + '-filename').textContent = '✅ ' + f.paths[idx] + '（自動読み込み）';
-                document.getElementById('clear-' + f.key).style.display = 'inline-flex';
-              }, function() {});
-            } catch(e) {}
-          } else {
-            tryPath(idx + 1);
-          }
-        };
-        xhr.send();
-      }
-      tryPath(0);
-    })(targets[ti]);
-  }
+  const ctx = getCtx();
+  [['school','chime.mp3','chime.wav'],['warn','warn.mp3','warn.wav']].forEach(([key,...paths]) => {
+    paths.forEach(path => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', path, true); xhr.responseType = 'arraybuffer';
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState !== 4 || xhr.status !== 200) return;
+        ctx.decodeAudioData(xhr.response, buf => {
+          customAudio[key] = buf;
+          document.getElementById(`${key}-filename`).textContent = `✅ ${path}（自動読み込み）`;
+          document.getElementById(`clear-${key}`).style.display = 'inline-flex';
+        }, () => {});
+      };
+      xhr.send();
+    });
+  });
 }
 
 // ── 初期化 ──
@@ -1407,14 +1248,11 @@ buildSchoolSelect();
 renderCalendar();
 renderRoomList();
 renderSchoolMasterList();
-// 学校予定フォームの初期化
-var _today = fmtDate(new Date());
-var _es = document.getElementById('evStart');
-var _ee = document.getElementById('evEnd');
-if (_es) _es.value = _today;
-if (_ee) _ee.value = _today;
+const _today = fmtDate(new Date());
+document.getElementById('evStart').value = _today;
+document.getElementById('evEnd').value   = _today;
 buildEvSchoolChips(null);
-window.addEventListener('load', function() { try { tryAutoLoadAudio(); } catch(e) {} });
+window.addEventListener('load', () => { try { tryAutoLoadAudio(); } catch(e) {} });
 </script>
 </body>
 </html>
