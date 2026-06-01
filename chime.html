@@ -761,9 +761,15 @@ function playSynthWarn() {
     u.lang = 'ja-JP'; u.rate = .85; u.volume = 1; speechSynthesis.speak(u);
   }, 3200);
 }
-function playCustomAudio(blobUrl) {
-  const audio = new Audio(blobUrl);
-  audio.play().catch(() => {});
+function playCustomAudio(arrayBuf) {
+  const ctx = getCtx();
+  if (ctx.state === 'suspended') ctx.resume();
+  ctx.decodeAudioData(arrayBuf.slice(0), buf => {
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(ctx.currentTime + 0.05);
+  }, () => {});
 }
 function playSchoolChime() { customAudio.school ? playCustomAudio(customAudio.school) : playSynthChime(); }
 function playWarnChime()   { customAudio.warn   ? playCustomAudio(customAudio.warn)   : playSynthWarn(); }
@@ -771,16 +777,17 @@ function testChime(t) { t === 'school' ? playSchoolChime() : playWarnChime(); }
 
 function loadAudio(type, input) {
   const file = input.files[0]; if (!file) return;
-  // BlobURLを作成して保持
-  const blobUrl = URL.createObjectURL(file);
-  customAudio[type] = blobUrl;
-  document.getElementById(`${type}-filename`).textContent = `✅ ${file.name}`;
-  document.getElementById(`clear-${type}`).style.display = 'inline-flex';
-  showToast('音声を設定しました');
+  const reader = new FileReader();
+  reader.onload = e => {
+    customAudio[type] = e.target.result.slice(0);
+    document.getElementById(`${type}-filename`).textContent = `✅ ${file.name}`;
+    document.getElementById(`clear-${type}`).style.display = 'inline-flex';
+    showToast('音声を設定しました');
+  };
+  reader.readAsArrayBuffer(file);
   input.value = '';
 }
 function clearAudio(type) {
-  if (customAudio[type]) { try { URL.revokeObjectURL(customAudio[type]); } catch(e) {} }
   customAudio[type] = null;
   document.getElementById(`${type}-filename`).textContent = type === 'school' ? '未設定（合成音を使用）' : '未設定（合成音＋音声読み上げを使用）';
   document.getElementById(`clear-${type}`).style.display = 'none';
@@ -1129,24 +1136,13 @@ function fireChime(e) {
   showToast(`🔔 ${e.label}`);
 }
 function unlockAudio() {
-  // iOSのユーザー操作タイミングでAudioContextを起動し自動再生を解禁する
+  // ユーザー操作タイミングでAudioContextを起動
   const ctx = getCtx();
   if (ctx.state === 'suspended') ctx.resume();
-  // 無音バッファを再生してiOSの自動再生制限を解除
+  // 無音バッファを再生してWeb Audio APIの自動再生を解禁
   const buf = ctx.createBuffer(1, 1, 22050);
   const src = ctx.createBufferSource();
   src.buffer = buf; src.connect(ctx.destination); src.start(0);
-  // Audio要素でも無音再生を試みる
-  if (customAudio.school) {
-    const a = new Audio(customAudio.school);
-    a.volume = 0;
-    a.play().then(() => { a.pause(); a.currentTime = 0; }).catch(() => {});
-  }
-  if (customAudio.warn) {
-    const b = new Audio(customAudio.warn);
-    b.volume = 0;
-    b.play().then(() => { b.pause(); b.currentTime = 0; }).catch(() => {});
-  }
 }
 function toggleScheduler() {
   running = !running;
@@ -1250,17 +1246,15 @@ function showToast(msg) {
 
 // ── 音声自動読み込み ──
 function tryAutoLoadAudio() {
-  // BlobURLを作成してAudio要素で再生する方式（AudioContextに依存しない）
   [['school','chime.mp3','chime.wav'],['warn','warn.mp3','warn.wav']].forEach(([key,...paths]) => {
     function tryNext(i) {
       if (i >= paths.length) return;
       const xhr = new XMLHttpRequest();
-      xhr.open('GET', paths[i], true); xhr.responseType = 'blob';
+      xhr.open('GET', paths[i], true); xhr.responseType = 'arraybuffer';
       xhr.onreadystatechange = function() {
         if (xhr.readyState !== 4) return;
         if (xhr.status === 200) {
-          const blobUrl = URL.createObjectURL(xhr.response);
-          customAudio[key] = blobUrl;
+          customAudio[key] = xhr.response.slice(0);
           document.getElementById(`${key}-filename`).textContent = `✅ ${paths[i]}（自動読み込み）`;
           document.getElementById(`clear-${key}`).style.display = 'inline-flex';
         } else {
