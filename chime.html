@@ -1128,12 +1128,34 @@ function fireChime(e) {
   e.type === 'warn' ? playWarnChime() : playSchoolChime();
   showToast(`🔔 ${e.label}`);
 }
+function unlockAudio() {
+  // iOSのユーザー操作タイミングでAudioContextを起動し自動再生を解禁する
+  const ctx = getCtx();
+  if (ctx.state === 'suspended') ctx.resume();
+  // 無音バッファを再生してiOSの自動再生制限を解除
+  const buf = ctx.createBuffer(1, 1, 22050);
+  const src = ctx.createBufferSource();
+  src.buffer = buf; src.connect(ctx.destination); src.start(0);
+  // Audio要素でも無音再生を試みる
+  if (customAudio.school) {
+    const a = new Audio(customAudio.school);
+    a.volume = 0;
+    a.play().then(() => { a.pause(); a.currentTime = 0; }).catch(() => {});
+  }
+  if (customAudio.warn) {
+    const b = new Audio(customAudio.warn);
+    b.volume = 0;
+    b.play().then(() => { b.pause(); b.currentTime = 0; }).catch(() => {});
+  }
+}
 function toggleScheduler() {
   running = !running;
   const btn = document.getElementById('startBtn'), dot = document.getElementById('statusDot'), txt = document.getElementById('statusText');
   if (running) {
+    // ユーザー操作タイミングで実際にチャイムを短く鳴らしてiOS制限を解除
+    playSchoolChime();
     btn.textContent = '⏹ 停止'; dot.className = 'status-dot active'; txt.textContent = '動作中';
-    ticker = setInterval(tick, 1000); renderSchedule(); showToast('スケジューラーを開始しました');
+    ticker = setInterval(tick, 1000); renderSchedule(); showToast('スケジューラーを開始しました（チャイムテスト）');
   } else {
     btn.textContent = '▶ 開始'; dot.className = 'status-dot'; txt.textContent = '停止中';
     clearInterval(ticker); showToast('停止しました');
