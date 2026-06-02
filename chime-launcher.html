@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>チャイム起動</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --border: #2a2d3a;
+    --accent: #4f8ef7;
+    --accent2: #f7c94f;
+    --success: #4fca7a;
+    --danger: #f76f4f;
+    --text: #e8eaf0;
+    --muted: #7a7f99;
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', sans-serif;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 24px 16px 40px;
+    gap: 20px;
+  }
+
+  /* ── Header ── */
+  .header {
+    width: 100%;
+    max-width: 520px;
+    text-align: center;
+    padding-top: 8px;
+  }
+  .header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--text);
+  }
+  .header p {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* ── Status card ── */
+  .status-card {
+    width: 100%;
+    max-width: 520px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    text-align: center;
+    transition: border-color 0.3s;
+  }
+  .status-card.playing { border-color: var(--success); }
+  .status-card.error   { border-color: var(--danger); }
+
+  .bell-icon {
+    font-size: 3.5rem;
+    display: block;
+    margin-bottom: 12px;
+    transition: transform 0.1s;
+  }
+  .bell-icon.ringing {
+    animation: ring 0.4s ease-in-out infinite alternate;
+  }
+  @keyframes ring {
+    from { transform: rotate(-15deg); }
+    to   { transform: rotate(15deg); }
+  }
+
+  .status-label {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .status-sub {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* ── Sound selector ── */
+  .sound-row {
+    width: 100%;
+    max-width: 520px;
+    display: flex;
+    gap: 10px;
+  }
+  .sound-btn {
+    flex: 1;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 0.9rem;
+    padding: 14px 8px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+  }
+  .sound-btn .sicon { font-size: 1.6rem; }
+  .sound-btn.active {
+    border-color: var(--accent);
+    background: #1e2540;
+  }
+  .sound-btn:hover { border-color: var(--accent); }
+
+  /* ── Play button ── */
+  .play-btn {
+    width: 100%;
+    max-width: 520px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 16px;
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .play-btn:active { opacity: 0.8; transform: scale(0.98); }
+  .play-btn:disabled { opacity: 0.4; cursor: default; }
+
+  /* ── Divider ── */
+  .divider {
+    width: 100%;
+    max-width: 520px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 0.78rem;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── Guide section ── */
+  .guide {
+    width: 100%;
+    max-width: 520px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .guide-header {
+    padding: 14px 18px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    background: #1e2130;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .guide-header .arrow {
+    margin-left: auto;
+    transition: transform 0.2s;
+    font-style: normal;
+    font-size: 0.75rem;
+  }
+  .guide-header.open .arrow { transform: rotate(180deg); }
+  .guide-body {
+    display: none;
+    padding: 18px;
+    gap: 14px;
+    flex-direction: column;
+  }
+  .guide-body.open { display: flex; }
+
+  .step {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .step-num {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .step-content { flex: 1; }
+  .step-content strong {
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+  .step-content p {
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* ── URL box ── */
+  .url-section {
+    width: 100%;
+    max-width: 520px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+  }
+  .url-section label {
+    font-size: 0.78rem;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .url-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .url-box {
+    flex: 1;
+    background: #0a0c12;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.78rem;
+    color: var(--accent);
+    word-break: break-all;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    min-width: 0;
+  }
+  .copy-btn {
+    flex-shrink: 0;
+    background: var(--border);
+    border: none;
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.78rem;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s;
+  }
+  .copy-btn:hover { background: var(--accent); }
+  .copy-btn.copied { background: var(--success); color: #fff; }
+
+  .url-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .url-tab {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 0.78rem;
+    padding: 7px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .url-tab.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    font-weight: 700;
+  }
+
+  /* ── Note ── */
+  .note {
+    width: 100%;
+    max-width: 520px;
+    background: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 0.78rem;
+    color: #8888cc;
+    line-height: 1.6;
+  }
+  .note strong { color: var(--accent2); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🔔 チャイム起動</h1>
+  <p>iOSショートカット連携用ページ</p>
+</div>
+
+<!-- Status -->
+<div class="status-card" id="statusCard">
+  <span class="bell-icon" id="bellIcon">🔔</span>
+  <div class="status-label" id="statusLabel">待機中</div>
+  <div class="status-sub" id="statusSub">URLパラメータまたは下のボタンで再生</div>
+</div>
+
+<!-- Sound selector -->
+<div class="sound-row">
+  <button class="sound-btn active" id="btn-chime" onclick="selectSound('chime')">
+    <span class="sicon">🔔</span>
+    <span>授業チャイム</span>
+  </button>
+  <button class="sound-btn" id="btn-warn" onclick="selectSound('warn')">
+    <span class="sicon">⚠️</span>
+    <span>10分前警告</span>
+  </button>
+</div>
+
+<!-- Manual play -->
+<button class="play-btn" id="playBtn" onclick="playSound()">▶ 今すぐ再生する</button>
+
+<div class="divider">iOSショートカット設定</div>
+
+<!-- URL box -->
+<div class="url-section">
+  <label>ショートカットに設定するURL</label>
+  <div class="url-tabs">
+    <button class="url-tab active" id="tab-chime" onclick="switchTab('chime')">🔔 授業チャイム</button>
+    <button class="url-tab" id="tab-warn" onclick="switchTab('warn')">⚠️ 10分前警告</button>
+  </div>
+  <div class="url-row">
+    <div class="url-box" id="urlBox">読み込み中...</div>
+    <button class="copy-btn" id="copyBtn" onclick="copyUrl()">コピー</button>
+  </div>
+</div>
+
+<!-- Setup guide -->
+<div class="guide">
+  <div class="guide-header" id="guideHeader" onclick="toggleGuide()">
+    📱 iOSショートカットの設定手順
+    <i class="arrow">▼</i>
+  </div>
+  <div class="guide-body" id="guideBody">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <strong>ショートカットアプリを開く</strong>
+        <p>iPadにプリインストールされている「ショートカット」アプリを開きます。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <strong>「オートメーション」タブ → 「＋」</strong>
+        <p>画面下の「オートメーション」を選び、右上の「＋」をタップします。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <strong>「時刻」を選ぶ</strong>
+        <p>「時刻」をタップし、鳴らしたい時刻（例：8:30）を設定します。「毎日」または曜日を指定してください。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <strong>アクションを追加 →「URLを開く」</strong>
+        <p>「新規空のオートメーション」→「アクションを追加」→「URL」で検索 →「URLを開く」を選択します。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <strong>URLを貼り付ける</strong>
+        <p>上の「URLをコピー」ボタンでコピーしたURLを貼り付けます。<br>チャイム種類ごとに別々のオートメーションを作ってください。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-content">
+        <strong>「実行前に確認」をオフにする</strong>
+        <p>右上の「次へ」→「実行前に確認」のトグルをオフにします。これで自動で開くようになります。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">7</div>
+      <div class="step-content">
+        <strong>完了！</strong>
+        <p>設定した時刻になるとSafariが自動で開き、チャイムが再生されます。iPadの音量をあらかじめ上げておいてください。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  <strong>⚠️ 注意事項</strong><br>
+  ・iPadの音量を事前に上げておいてください<br>
+  ・サイレントスイッチがオフになっていることを確認してください<br>
+  ・「実行前に確認」をオフにしないと通知タップが必要になります<br>
+  ・このページはSafariで開いたとき自動でチャイムを鳴らします
+</div>
+
+<script>
+  const BASE = 'https://kobetsumeiko-rgb.github.io/staff-chat/';
+  const SOUNDS = {
+    chime: BASE + 'chime.mp3',
+    warn:  BASE + 'warn.wave',
+  };
+
+  let currentSound = 'chime';
+  let currentTab   = 'chime';
+  let audio = null;
+
+  /* ── URLを生成 ── */
+  function buildUrl(sound) {
+    const base = location.href.split('?')[0];
+    return base + '?sound=' + sound;
+  }
+
+  function updateUrlBox() {
+    document.getElementById('urlBox').textContent = buildUrl(currentTab);
+  }
+
+  /* ── タブ切り替え ── */
+  function switchTab(sound) {
+    currentTab = sound;
+    document.querySelectorAll('.url-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + sound).classList.add('active');
+    updateUrlBox();
+    // コピーボタンをリセット
+    const cb = document.getElementById('copyBtn');
+    cb.textContent = 'コピー';
+    cb.classList.remove('copied');
+  }
+
+  /* ── 音源ボタン ── */
+  function selectSound(sound) {
+    currentSound = sound;
+    document.querySelectorAll('.sound-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('btn-' + sound).classList.add('active');
+  }
+
+  /* ── コピー ── */
+  function copyUrl() {
+    const url = buildUrl(currentTab);
+    navigator.clipboard.writeText(url).then(() => {
+      const cb = document.getElementById('copyBtn');
+      cb.textContent = 'コピー済み ✓';
+      cb.classList.add('copied');
+      setTimeout(() => {
+        cb.textContent = 'コピー';
+        cb.classList.remove('copied');
+      }, 2000);
+    });
+  }
+
+  /* ── ガイド開閉 ── */
+  function toggleGuide() {
+    const h = document.getElementById('guideHeader');
+    const b = document.getElementById('guideBody');
+    h.classList.toggle('open');
+    b.classList.toggle('open');
+  }
+
+  /* ── 再生 ── */
+  function playSound(sound) {
+    const s = sound || currentSound;
+    const src = SOUNDS[s];
+    if (!src) return;
+
+    setStatus('loading', '🔔', '読み込み中...', '');
+
+    if (audio) { audio.pause(); audio = null; }
+
+    audio = new Audio(src);
+    audio.play()
+      .then(() => {
+        setStatus('playing', '🔔', '再生中', SOUNDS[s].split('/').pop());
+        document.getElementById('bellIcon').classList.add('ringing');
+        audio.onended = () => {
+          setStatus('done', '✅', '再生完了', '');
+          document.getElementById('bellIcon').classList.remove('ringing');
+        };
+      })
+      .catch(err => {
+        setStatus('error', '❌', '再生エラー', err.message);
+      });
+  }
+
+  function setStatus(type, icon, label, sub) {
+    const card = document.getElementById('statusCard');
+    card.className = 'status-card ' + (type === 'playing' ? 'playing' : type === 'error' ? 'error' : '');
+    document.getElementById('bellIcon').textContent = icon;
+    document.getElementById('statusLabel').textContent = label;
+    document.getElementById('statusSub').textContent = sub;
+  }
+
+  /* ── 初期化：URLパラメータを確認して自動再生 ── */
+  window.addEventListener('DOMContentLoaded', () => {
+    updateUrlBox();
+
+    const params = new URLSearchParams(location.search);
+    const sound  = params.get('sound');
+
+    if (sound && SOUNDS[sound]) {
+      // autoplay: URLで開かれたとき即再生
+      selectSound(sound);
+      setStatus('loading', '🔔', '自動再生中...', sound);
+      // iOS Safari は autoplay にユーザージェスチャーが必要な場合あり
+      // → ページロード直後に試みる
+      const tryPlay = () => {
+        playSound(sound);
+        document.removeEventListener('touchstart', tryPlay);
+        document.removeEventListener('click', tryPlay);
+      };
+      // まず直接試みる
+      const a = new Audio(SOUNDS[sound]);
+      a.play()
+        .then(() => {
+          audio = a;
+          setStatus('playing', '🔔', '自動再生中', SOUNDS[sound].split('/').pop());
+          document.getElementById('bellIcon').classList.add('ringing');
+          a.onended = () => {
+            setStatus('done', '✅', '再生完了', '');
+            document.getElementById('bellIcon').classList.remove('ringing');
+          };
+        })
+        .catch(() => {
+          // ユーザータップが必要な場合のフォールバック
+          setStatus('waiting', '👆', '画面をタップして再生', 'iOSの制限により、タップが必要です');
+          document.addEventListener('touchstart', tryPlay, { once: true });
+          document.addEventListener('click', tryPlay, { once: true });
+        });
+    }
+  });
+</script>
+</body>
+</html>
