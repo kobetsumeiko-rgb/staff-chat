@@ -58,6 +58,8 @@
   .note-area{width:100%;border:1px solid #ccc;border-radius:4px;padding:7px 9px;font-size:13px;min-height:72px;background:#fff;color:#1a1a1a;font-family:inherit;resize:vertical}
   .legend{display:flex;gap:16px;font-size:12px;color:#666;margin-top:4px}
 
+  @page{size:A4 portrait;margin:10mm}
+  @page subjPage{size:A4 landscape;margin:8mm}
   @media print{
     body{background:#fff}
     .wrap{padding:4px 6px;box-shadow:none}
@@ -66,11 +68,13 @@
     .shift-cell.on{background:#555!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .sec-title{background:#eee!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .page-break{page-break-before:always;break-before:always}
-    .subj-table{font-size:7.5px!important;table-layout:fixed;width:100%!important}
-    .subj-table th,.subj-table td{padding:1px 2px!important;border:0.4px solid #bbb!important}
-    .subj-table th.colh{width:26px!important;min-width:0!important}
-    .subj-table th.rowh{font-size:7px!important;white-space:nowrap;overflow:hidden}
-    .subj-table select{font-size:7px!important;width:100%!important}
+    /* 指導可能科目ページだけ横向き */
+    .subj-section{page:subjPage;page-break-before:always;break-before:always}
+    .subj-table{font-size:8px!important;table-layout:auto;width:100%!important}
+    .subj-table th,.subj-table td{padding:2px 2px!important;border:0.5px solid #bbb!important}
+    .subj-table th.colh{white-space:nowrap}
+    .subj-table th.rowh{font-size:7.5px!important;white-space:nowrap}
+    .subj-table select{font-size:8px!important}
     #subjTableB,#subjTableC{display:none!important}
   }
 </style>
@@ -244,7 +248,7 @@
   </div>
 
   <!-- 指導可能科目 -->
-  <div class="section page-break">
+  <div class="section page-break subj-section">
     <div class="sec-title">指導可能科目</div>
     <div class="legend">
       <span>○ = 得意・自信あり</span><span>△ = 対応可能</span><span>× = 対応不可</span>
