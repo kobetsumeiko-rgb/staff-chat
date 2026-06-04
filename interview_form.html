@@ -65,6 +65,7 @@
     h1{font-size:17px}
     .shift-cell.on{background:#555!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .sec-title{background:#eee!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .page-break{page-break-before:always;break-before:always}
   }
 </style>
 </head>
@@ -237,14 +238,17 @@
   </div>
 
   <!-- 指導可能科目 -->
-  <div class="section">
+  <div class="section page-break">
     <div class="sec-title">指導可能科目</div>
     <div class="legend">
       <span>○ = 得意・自信あり</span><span>△ = 対応可能</span><span>× = 対応不可</span>
       <span style="margin-left:auto;color:#999">空欄 = 未回答</span>
     </div>
     <div style="margin-top:7px;overflow-x:auto">
-      <table class="subj-table" id="subjTable"></table>
+      <table class="subj-table" id="subjTableA"></table>
+    </div>
+    <div style="margin-top:8px;overflow-x:auto">
+      <table class="subj-table" id="subjTableB"></table>
     </div>
   </div>
 
@@ -336,18 +340,25 @@ function buildSubjTable(){
   var subjData = {
     '小学生': ['国語','算数','理科','社会'],
     '中学生': ['国語','数学','理科','社会','英語'],
-    '高校生': ['現代文','古文','小論文','数ⅠA','数ⅡB','数Ⅲ','数C','英語','世界史','日本史','倫理','政経','現社','地理','物理','化学','生物','地学']
+    '高校生A': ['現代文','古文','小論文','数ⅠA','数ⅡB','数Ⅲ','数C','英語','世界史'],
+    '高校生B': ['日本史','倫理','政経','現社','地理','物理','化学','生物','地学']
   };
-  var levels = Object.keys(subjData);
-  var tbl = document.getElementById('subjTable');
-  var html = '<thead><tr><th class="colh" style="min-width:48px">学年</th>';
-  levels.forEach(function(lv){ html += '<th class="colh" colspan="' + subjData[lv].length + '">' + lv + '</th>'; });
-  html += '</tr><tr><th class="colh"></th>';
-  levels.forEach(function(lv){ subjData[lv].forEach(function(s){ html += '<th class="rowh" style="font-size:10px">' + s + '</th>'; }); });
-  html += '</tr></thead><tbody>';
-  ['小学生','中学生','高校生'].forEach(function(grade){
+
+  /* テーブルA：小学生・中学生・高校生（前半） */
+  var levelsA = ['小学生','中学生','高校生A'];
+  var tblA = document.getElementById('subjTableA');
+  var htmlA = '<thead><tr><th class="colh" style="min-width:48px">学年</th>';
+  levelsA.forEach(function(lv){
+    var label = lv.replace('A','');
+    htmlA += '<th class="colh" colspan="' + subjData[lv].length + '">' + label + '</th>';
+  });
+  htmlA += '</tr><tr><th class="colh"></th>';
+  levelsA.forEach(function(lv){ subjData[lv].forEach(function(s){ htmlA += '<th class="rowh" style="font-size:10px">' + s + '</th>'; }); });
+  htmlA += '</tr></thead><tbody>';
+  ['小学生','中学生','高校生A'].forEach(function(grade){
+    var gradeLabel = grade.replace('A','');
     var cols = '';
-    levels.forEach(function(lv){
+    levelsA.forEach(function(lv){
       subjData[lv].forEach(function(s){
         if(subjData[grade].indexOf(s) >= 0){
           cols += '<td><select><option value="">—</option><option>○</option><option>△</option><option>×</option></select></td>';
@@ -356,10 +367,24 @@ function buildSubjTable(){
         }
       });
     });
-    html += '<tr><td class="colh" style="font-weight:500;white-space:nowrap">' + grade + '</td>' + cols + '</tr>';
+    htmlA += '<tr><td class="colh" style="font-weight:500;white-space:nowrap">' + gradeLabel + '</td>' + cols + '</tr>';
   });
-  html += '</tbody>';
-  tbl.innerHTML = html;
+  htmlA += '</tbody>';
+  tblA.innerHTML = htmlA;
+
+  /* テーブルB：高校生（後半）のみ */
+  var tblB = document.getElementById('subjTableB');
+  var htmlB = '<thead><tr><th class="colh" style="min-width:48px">学年</th>';
+  htmlB += '<th class="colh" colspan="' + subjData['高校生B'].length + '">高校生（続き）</th>';
+  htmlB += '</tr><tr><th class="colh"></th>';
+  subjData['高校生B'].forEach(function(s){ htmlB += '<th class="rowh" style="font-size:10px">' + s + '</th>'; });
+  htmlB += '</tr></thead><tbody><tr>';
+  htmlB += '<td class="colh" style="font-weight:500;white-space:nowrap">高校生</td>';
+  subjData['高校生B'].forEach(function(){
+    htmlB += '<td><select><option value="">—</option><option>○</option><option>△</option><option>×</option></select></td>';
+  });
+  htmlB += '</tr></tbody>';
+  tblB.innerHTML = htmlB;
 }
 
 function buildKyotsuRow(){
@@ -412,6 +437,7 @@ buildShiftTable('circleShift', 'circle');
 buildShiftTable('baitoShift',  'baito');
 buildSubjTable();
 buildKyotsuRow();
+
 </script>
 </body>
 </html>
