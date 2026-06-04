@@ -60,12 +60,18 @@
 
   @media print{
     body{background:#fff}
-    .wrap{padding:8px;box-shadow:none}
+    .wrap{padding:4px 6px;box-shadow:none}
     .print-btn{display:none}
-    h1{font-size:17px}
+    h1{font-size:15px}
     .shift-cell.on{background:#555!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .sec-title{background:#eee!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .page-break{page-break-before:always;break-before:always}
+    .subj-table{font-size:7.5px!important;table-layout:fixed;width:100%!important}
+    .subj-table th,.subj-table td{padding:1px 2px!important;border:0.4px solid #bbb!important}
+    .subj-table th.colh{width:26px!important;min-width:0!important}
+    .subj-table th.rowh{font-size:7px!important;white-space:nowrap;overflow:hidden}
+    .subj-table select{font-size:7px!important;width:100%!important}
+    #subjTableB,#subjTableC{display:none!important}
   }
 </style>
 </head>
@@ -342,63 +348,55 @@ function toggleCell(id){
 function buildSubjTable(){
   var esSubj  = ['国語','算数','理科','社会'];
   var jhsSubj = ['国語','数学','理科','社会','英語'];
-  var hsA     = ['現代文','古文','小論文','数ⅠA','数ⅡB','数Ⅲ','数C','英語'];
-  var hsB     = ['世界史','日本史','倫理','政経','現社','地理','物理','化学','生物','地学'];
+  var hsAll   = ['現代文','古文','小論文','数ⅠA','数ⅡB','数Ⅲ','数C','英語','世界史','日本史','倫理','政経','現社','地理','物理','化学','生物','地学'];
+  var hsA     = hsAll.slice(0, 9);
+  var hsB     = hsAll.slice(9);
 
-  function makeSelect(){
-    return '<td><select><option value="">—</option><option>○</option><option>△</option><option>×</option></select></td>';
+  function sel(){ return '<td><select><option value="">—</option><option>○</option><option>△</option><option>×</option></select></td>'; }
+  function blk(){ return '<td style="background:#f5f5f5"></td>'; }
+
+  function buildOne(tblId, esC, jhsC, hsC, hsLabel){
+    var tbl = document.getElementById(tblId);
+    if(!tbl) return;
+    var h = '<thead><tr><th class="colh" style="min-width:32px">学年</th>';
+    if(esC)  h += '<th class="colh" colspan="'+esC.length+'">小学生</th>';
+    if(jhsC) h += '<th class="colh" colspan="'+jhsC.length+'">中学生</th>';
+    if(hsC)  h += '<th class="colh" colspan="'+hsC.length+'">'+hsLabel+'</th>';
+    h += '</tr><tr><th class="colh"></th>';
+    (esC||[]).concat(jhsC||[]).concat(hsC||[]).forEach(function(s){
+      h += '<th class="rowh" style="font-size:9.5px">'+s+'</th>';
+    });
+    h += '</tr></thead><tbody>';
+    if(esC){
+      h += '<tr><td class="colh" style="font-weight:500">小学生</td>';
+      esC.forEach(function(){ h += sel(); });
+      (jhsC||[]).forEach(function(){ h += blk(); });
+      (hsC||[]).forEach(function(){ h += blk(); });
+      h += '</tr>';
+    }
+    if(jhsC){
+      h += '<tr><td class="colh" style="font-weight:500">中学生</td>';
+      (esC||[]).forEach(function(){ h += blk(); });
+      jhsC.forEach(function(){ h += sel(); });
+      (hsC||[]).forEach(function(){ h += blk(); });
+      h += '</tr>';
+    }
+    if(hsC){
+      h += '<tr><td class="colh" style="font-weight:500">高校生</td>';
+      (esC||[]).forEach(function(){ h += blk(); });
+      (jhsC||[]).forEach(function(){ h += blk(); });
+      hsC.forEach(function(){ h += sel(); });
+      h += '</tr>';
+    }
+    h += '</tbody>';
+    tbl.innerHTML = h;
   }
-  function makeBlank(){
-    return '<td style="background:#f5f5f5"></td>';
-  }
 
-  /* ── テーブルA：小学生 / 中学生 / 高校生前半 ── */
-  var tblA = document.getElementById('subjTableA');
-  var hA = '<thead>';
-  hA += '<tr><th class="colh" style="min-width:46px">学年</th>';
-  hA += '<th class="colh" colspan="'+esSubj.length+'">小学生</th>';
-  hA += '<th class="colh" colspan="'+jhsSubj.length+'">中学生</th>';
-  hA += '<th class="colh" colspan="'+hsA.length+'">高校生</th></tr>';
-  hA += '<tr><th class="colh"></th>';
-  esSubj.concat(jhsSubj).concat(hsA).forEach(function(s){
-    hA += '<th class="rowh" style="font-size:10px">'+s+'</th>';
-  });
-  hA += '</tr></thead><tbody>';
-  /* 小学生行 */
-  hA += '<tr><td class="colh" style="font-weight:500">小学生</td>';
-  esSubj.forEach(function(){ hA += makeSelect(); });
-  jhsSubj.forEach(function(){ hA += makeBlank(); });
-  hsA.forEach(function(){ hA += makeBlank(); });
-  hA += '</tr>';
-  /* 中学生行 */
-  hA += '<tr><td class="colh" style="font-weight:500">中学生</td>';
-  esSubj.forEach(function(){ hA += makeBlank(); });
-  jhsSubj.forEach(function(){ hA += makeSelect(); });
-  hsA.forEach(function(){ hA += makeBlank(); });
-  hA += '</tr>';
-  /* 高校生行 */
-  hA += '<tr><td class="colh" style="font-weight:500">高校生</td>';
-  esSubj.forEach(function(){ hA += makeBlank(); });
-  jhsSubj.forEach(function(){ hA += makeBlank(); });
-  hsA.forEach(function(){ hA += makeSelect(); });
-  hA += '</tr>';
-  hA += '</tbody>';
-  tblA.innerHTML = hA;
+  /* 画面表示用：テーブルA（小学・中学・高校前半）、テーブルB（高校後半） */
+  buildOne('subjTableA', esSubj, jhsSubj, hsA, '高校生');
+  buildOne('subjTableB', null,   null,    hsB, '高校生（続き）');
 
-  /* ── テーブルB：高校生後半 ── */
-  var tblB = document.getElementById('subjTableB');
-  var hB = '<thead>';
-  hB += '<tr><th class="colh" style="min-width:46px">学年</th>';
-  hB += '<th class="colh" colspan="'+hsB.length+'">高校生（続き）</th></tr>';
-  hB += '<tr><th class="colh"></th>';
-  hsB.forEach(function(s){ hB += '<th class="rowh" style="font-size:10px">'+s+'</th>'; });
-  hB += '</tr></thead><tbody>';
-  hB += '<tr><td class="colh" style="font-weight:500">高校生</td>';
-  hsB.forEach(function(){ hB += makeSelect(); });
-  hB += '</tr></tbody>';
-  tblB.innerHTML = hB;
-
-  /* テーブルCは不要になったので非表示 */
+  /* テーブルCは使わない */
   var tblC = document.getElementById('subjTableC');
   if(tblC) tblC.style.display = 'none';
 }
