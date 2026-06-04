@@ -59,7 +59,6 @@
   .legend{display:flex;gap:16px;font-size:12px;color:#666;margin-top:4px}
 
   @page{size:A4 portrait;margin:10mm}
-  @page subjPage{size:A4 landscape;margin:8mm}
   @media print{
     body{background:#fff}
     .wrap{padding:4px 6px;box-shadow:none}
@@ -68,14 +67,7 @@
     .shift-cell.on{background:#555!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .sec-title{background:#eee!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .page-break{page-break-before:always;break-before:always}
-    /* 指導可能科目ページだけ横向き */
-    .subj-section{page:subjPage;page-break-before:always;break-before:always}
-    .subj-table{font-size:8px!important;table-layout:auto;width:100%!important}
-    .subj-table th,.subj-table td{padding:2px 2px!important;border:0.5px solid #bbb!important}
-    .subj-table th.colh{white-space:nowrap}
-    .subj-table th.rowh{font-size:7.5px!important;white-space:nowrap}
-    .subj-table select{font-size:8px!important}
-    #subjTableB,#subjTableC{display:none!important}
+    .subj-section{page-break-before:always;break-before:always}
   }
 </style>
 </head>
@@ -350,59 +342,59 @@ function toggleCell(id){
 }
 
 function buildSubjTable(){
-  var esSubj  = ['国語','算数','理科','社会'];
-  var jhsSubj = ['国語','数学','理科','社会','英語'];
-  var hsAll   = ['現代文','古文','小論文','数ⅠA','数ⅡB','数Ⅲ','数C','英語','世界史','日本史','倫理','政経','現社','地理','物理','化学','生物','地学'];
-  var hsA     = hsAll.slice(0, 9);
-  var hsB     = hsAll.slice(9);
+  // 縦軸：科目、横軸：小学生・中学生・高校生
+  var subjects = [
+    {name:'国語',     es:true,  jhs:true,  hs:false},
+    {name:'算数',     es:true,  jhs:false, hs:false},
+    {name:'数学',     es:false, jhs:true,  hs:false},
+    {name:'理科',     es:true,  jhs:true,  hs:false},
+    {name:'社会',     es:true,  jhs:true,  hs:false},
+    {name:'英語',     es:false, jhs:true,  hs:true},
+    {name:'現代文',   es:false, jhs:false, hs:true},
+    {name:'古文',     es:false, jhs:false, hs:true},
+    {name:'小論文',   es:false, jhs:false, hs:true},
+    {name:'数ⅠA',    es:false, jhs:false, hs:true},
+    {name:'数ⅡB',    es:false, jhs:false, hs:true},
+    {name:'数Ⅲ',     es:false, jhs:false, hs:true},
+    {name:'数C',      es:false, jhs:false, hs:true},
+    {name:'世界史',   es:false, jhs:false, hs:true},
+    {name:'日本史',   es:false, jhs:false, hs:true},
+    {name:'倫理',     es:false, jhs:false, hs:true},
+    {name:'政経',     es:false, jhs:false, hs:true},
+    {name:'現代社会', es:false, jhs:false, hs:true},
+    {name:'地理',     es:false, jhs:false, hs:true},
+    {name:'物理',     es:false, jhs:false, hs:true},
+    {name:'化学',     es:false, jhs:false, hs:true},
+    {name:'生物',     es:false, jhs:false, hs:true},
+    {name:'地学',     es:false, jhs:false, hs:true}
+  ];
 
-  function sel(){ return '<td><select><option value="">—</option><option>○</option><option>△</option><option>×</option></select></td>'; }
-  function blk(){ return '<td style="background:#f5f5f5"></td>'; }
+  function sel(){ return '<td style="text-align:center"><select style="width:52px;border:1px solid #ccc;border-radius:3px;font-size:12px;background:#fff;color:#1a1a1a"><option value="">—</option><option>○</option><option>△</option><option>×</option></select></td>'; }
+  function blk(){ return '<td style="background:#f0f0f0"></td>'; }
 
-  function buildOne(tblId, esC, jhsC, hsC, hsLabel){
-    var tbl = document.getElementById(tblId);
-    if(!tbl) return;
-    var h = '<thead><tr><th class="colh" style="min-width:32px">学年</th>';
-    if(esC)  h += '<th class="colh" colspan="'+esC.length+'">小学生</th>';
-    if(jhsC) h += '<th class="colh" colspan="'+jhsC.length+'">中学生</th>';
-    if(hsC)  h += '<th class="colh" colspan="'+hsC.length+'">'+hsLabel+'</th>';
-    h += '</tr><tr><th class="colh"></th>';
-    (esC||[]).concat(jhsC||[]).concat(hsC||[]).forEach(function(s){
-      h += '<th class="rowh" style="font-size:9.5px">'+s+'</th>';
-    });
-    h += '</tr></thead><tbody>';
-    if(esC){
-      h += '<tr><td class="colh" style="font-weight:500">小学生</td>';
-      esC.forEach(function(){ h += sel(); });
-      (jhsC||[]).forEach(function(){ h += blk(); });
-      (hsC||[]).forEach(function(){ h += blk(); });
-      h += '</tr>';
-    }
-    if(jhsC){
-      h += '<tr><td class="colh" style="font-weight:500">中学生</td>';
-      (esC||[]).forEach(function(){ h += blk(); });
-      jhsC.forEach(function(){ h += sel(); });
-      (hsC||[]).forEach(function(){ h += blk(); });
-      h += '</tr>';
-    }
-    if(hsC){
-      h += '<tr><td class="colh" style="font-weight:500">高校生</td>';
-      (esC||[]).forEach(function(){ h += blk(); });
-      (jhsC||[]).forEach(function(){ h += blk(); });
-      hsC.forEach(function(){ h += sel(); });
-      h += '</tr>';
-    }
-    h += '</tbody>';
-    tbl.innerHTML = h;
-  }
+  var tblA = document.getElementById('subjTableA');
+  var h = '<thead><tr>';
+  h += '<th class="colh" style="min-width:64px;text-align:left;padding-left:6px">科目</th>';
+  h += '<th class="colh" style="width:80px">小学生</th>';
+  h += '<th class="colh" style="width:80px">中学生</th>';
+  h += '<th class="colh" style="width:80px">高校生</th>';
+  h += '</tr></thead><tbody>';
+  subjects.forEach(function(s){
+    h += '<tr>';
+    h += '<td style="font-size:12px;padding:3px 6px;border:0.5px solid #ddd;background:#f9f9f9;font-weight:500">'+s.name+'</td>';
+    h += s.es  ? sel() : blk();
+    h += s.jhs ? sel() : blk();
+    h += s.hs  ? sel() : blk();
+    h += '</tr>';
+  });
+  h += '</tbody>';
+  tblA.innerHTML = h;
 
-  /* 画面表示用：テーブルA（小学・中学・高校前半）、テーブルB（高校後半） */
-  buildOne('subjTableA', esSubj, jhsSubj, hsA, '高校生');
-  buildOne('subjTableB', null,   null,    hsB, '高校生（続き）');
-
-  /* テーブルCは使わない */
-  var tblC = document.getElementById('subjTableC');
-  if(tblC) tblC.style.display = 'none';
+  // テーブルB・Cは不要
+  ['subjTableB','subjTableC'].forEach(function(id){
+    var t = document.getElementById(id);
+    if(t) t.style.display = 'none';
+  });
 }
 
 function buildKyotsuRow(){
