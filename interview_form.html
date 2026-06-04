@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>講師応募者 面接票</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Noto Sans JP',sans-serif;background:#f5f5f5;color:#1a1a1a}
+  .wrap{padding:24px;max-width:860px;margin:0 auto;background:#fff;min-height:100vh;font-size:13px}
+  h1{font-size:20px;font-weight:500;text-align:center;margin-bottom:20px;padding-bottom:10px;border-bottom:1.5px solid #ccc}
+  .section{margin-bottom:16px}
+  .sec-title{font-size:12px;font-weight:500;color:#555;background:#f0eeff;padding:4px 10px;border-left:3px solid #534AB7;margin-bottom:9px;letter-spacing:.05em}
+  .row{display:flex;gap:8px;margin-bottom:7px;align-items:center;flex-wrap:wrap}
+  .field{display:flex;flex-direction:column;gap:2px}
+  .field label{font-size:11px;color:#666}
+  .field input,.field select,.field textarea{border:1px solid #ccc;border-radius:4px;padding:5px 7px;font-size:13px;background:#fff;color:#1a1a1a;font-family:inherit}
+  .field input:focus,.field select:focus{outline:none;border-color:#534AB7}
+  .fw{flex:1;min-width:120px}
+  .f2{flex:2;min-width:180px}
+  .f3{flex:3;min-width:220px}
+  .radio-group{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .radio-group label{display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer}
+  .check-group{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .check-group label{display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer}
+  .divider{border:none;border-top:1px solid #eee;margin:8px 0}
+
+  .score-table{width:100%;border-collapse:collapse;font-size:11.5px}
+  .score-table th,.score-table td{border:1px solid #ddd;padding:4px 5px;text-align:center}
+  .score-table th{background:#f5f5f5;font-weight:500}
+  .score-table select{width:100%;min-width:84px;border:none;background:transparent;color:#1a1a1a;font-size:11px;text-align:center}
+  .score-table select:focus{outline:none}
+
+  .subj-table{width:100%;border-collapse:collapse;font-size:11px}
+  .subj-table th,.subj-table td{border:1px solid #ddd;padding:3px 4px;text-align:center;vertical-align:middle}
+  .subj-table th.rowh{text-align:center;background:#f5f5f5;font-weight:500;white-space:nowrap}
+  .subj-table th.colh{background:#f5f5f5;font-weight:500}
+  .subj-table select{width:42px;border:none;background:transparent;font-size:11px;text-align:center;color:#1a1a1a;cursor:pointer}
+  .subj-table select:focus{outline:none}
+
+  .shift-table{width:100%;border-collapse:collapse;font-size:12px}
+  .shift-table th,.shift-table td{border:1px solid #ddd;padding:4px 5px;text-align:center;vertical-align:middle}
+  .shift-table th{background:#f5f5f5;font-weight:500}
+  .shift-table td.time-label{font-size:11px;text-align:left;white-space:nowrap;background:#f5f5f5;color:#666;padding-left:7px}
+  .shift-cell{width:34px;height:28px;cursor:pointer;border-radius:3px;transition:background .1s;font-size:15px;display:flex;align-items:center;justify-content:center;margin:auto;user-select:none}
+  .shift-cell.on{background:#534AB7;color:#fff}
+  .shift-cell.off{background:transparent;color:transparent}
+
+  .detail-box{background:#f9f8ff;border:1px solid #e0ddf5;border-radius:6px;padding:10px 12px;margin-top:6px}
+
+  .qual-group{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+  .qual-item{display:flex;align-items:center;gap:6px;font-size:13px}
+  .qual-item select,.qual-item input{border:1px solid #ccc;border-radius:4px;padding:4px 6px;font-size:13px;background:#fff;color:#1a1a1a;font-family:inherit}
+
+  .print-btn{display:block;margin:20px auto 8px;padding:10px 32px;background:#534AB7;color:#fff;border:none;border-radius:7px;font-size:15px;cursor:pointer;font-family:inherit;font-weight:500}
+  .print-btn:hover{background:#3C3489}
+  .note-area{width:100%;border:1px solid #ccc;border-radius:4px;padding:7px 9px;font-size:13px;min-height:72px;background:#fff;color:#1a1a1a;font-family:inherit;resize:vertical}
+  .legend{display:flex;gap:16px;font-size:12px;color:#666;margin-top:4px}
+
+  @media print{
+    body{background:#fff}
+    .wrap{padding:8px;box-shadow:none}
+    .print-btn{display:none}
+    h1{font-size:17px}
+    .shift-cell.on{background:#555!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .sec-title{background:#eee!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>講師応募者 面接票</h1>
+
+  <!-- 基本情報 -->
+  <div class="section">
+    <div class="sec-title">基本情報</div>
+    <div class="row">
+      <div class="field f2"><label>氏名</label><input type="text" placeholder="山田 太郎"></div>
+      <div class="field"><label>性別</label>
+        <div class="radio-group" style="padding:5px 0">
+          <label><input type="radio" name="gender" value="男"> 男性</label>
+          <label><input type="radio" name="gender" value="女"> 女性</label>
+          <label><input type="radio" name="gender" value="その他"> その他</label>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field"><label>生年月日</label><input type="date" style="width:155px"></div>
+      <div class="field"><label>年齢</label><div style="display:flex;align-items:center;gap:4px;padding-top:2px"><input type="number" placeholder="20" style="width:62px"> <span style="font-size:13px">歳</span></div></div>
+      <div class="field f2"><label>電話番号</label><input type="tel" placeholder="090-0000-0000"></div>
+    </div>
+    <div class="row">
+      <div class="field f3"><label>現住所</label><input type="text" placeholder="長野市○○町1-2-3"></div>
+    </div>
+  </div>
+
+  <!-- 学歴 -->
+  <div class="section">
+    <div class="sec-title">学歴</div>
+    <div class="row">
+      <div class="field f2"><label>出身高校</label><input type="text" placeholder="○○高等学校"></div>
+      <div class="field f2"><label>出身大学（学部・学科）</label><input type="text" placeholder="○○大学 ○○学部"></div>
+    </div>
+    <div class="row">
+      <div class="field" style="flex:1"><label>大学入試の受験方式</label>
+        <div class="radio-group" style="padding:5px 0">
+          <label><input type="radio" name="exam" value="総合型"> 総合型</label>
+          <label><input type="radio" name="exam" value="推薦"> 推薦</label>
+          <label><input type="radio" name="exam" value="一般"> 一般</label>
+          <label><input type="radio" name="exam" value="内部進学"> 内部進学</label>
+          <label><input type="radio" name="exam" value="編入"> 編入</label>
+          <label><input type="radio" name="exam" value="その他"> その他</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 取得資格 -->
+  <div class="section">
+    <div class="sec-title">取得資格</div>
+    <div class="qual-group">
+      <div class="qual-item">
+        <span>英検</span>
+        <select id="eiken">
+          <option value="">なし</option>
+          <option>5級</option><option>4級</option><option>3級</option>
+          <option>準2級</option><option>2級</option><option>準1級</option><option>1級</option>
+        </select>
+      </div>
+      <div class="qual-item">
+        <span>TOEIC</span>
+        <select id="toeicHave">
+          <option value="なし">受験なし</option>
+          <option value="あり">受験あり</option>
+        </select>
+        <span id="toeicScoreWrap" style="display:none;align-items:center;gap:4px">
+          <input type="number" id="toeicScore" min="0" max="990" step="5" placeholder="000" style="width:74px"> <span>点</span>
+        </span>
+      </div>
+      <div class="qual-item">
+        <span>自動車免許</span>
+        <div class="radio-group">
+          <label><input type="radio" name="license" value="あり"> あり</label>
+          <label><input type="radio" name="license" value="なし"> なし</label>
+          <label><input type="radio" name="license" value="取得中"> 取得中</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 共通テスト -->
+  <div class="section">
+    <div class="sec-title">共通テスト</div>
+    <div class="row">
+      <label style="font-size:13px">受験経験：</label>
+      <div class="radio-group">
+        <label><input type="radio" name="kyotsu" value="あり"> あり</label>
+        <label><input type="radio" name="kyotsu" value="なし"> なし</label>
+      </div>
+    </div>
+    <div id="kyotsuDetail" style="display:none;margin-top:6px;overflow-x:auto">
+      <table class="score-table">
+        <thead>
+          <tr>
+            <th>国語</th><th>数学ⅠA</th><th>数学ⅡB/C</th><th>英語(R)</th><th>英語(L)</th><th>理科①</th><th>理科②</th><th>社会①</th><th>社会②</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr id="kyotsuScoreRow"></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 中学受験・通塾経験 -->
+  <div class="section">
+    <div class="sec-title">受験・通塾経験</div>
+    <div class="row">
+      <label style="font-size:13px;white-space:nowrap">中学受験：</label>
+      <div class="radio-group">
+        <label><input type="radio" name="jyuken" value="あり"> あり</label>
+        <label><input type="radio" name="jyuken" value="なし"> なし</label>
+      </div>
+      <div class="field fw" id="jyukenSchool" style="display:none">
+        <label>受験校</label><input type="text" placeholder="○○中学校ほか">
+      </div>
+    </div>
+    <hr class="divider">
+    <div style="font-size:12px;color:#666;margin-bottom:7px">通塾経験（あてはまる時期をすべて選択、塾名も記入）</div>
+
+    <!-- 小学生 -->
+    <div class="row" style="align-items:flex-start">
+      <span style="font-size:12px;white-space:nowrap;min-width:82px;padding-top:4px">小学生の頃：</span>
+      <div style="flex:1">
+        <div class="check-group" style="margin-bottom:5px">
+          <label><input type="checkbox" class="juku-cb" data-grade="es"> 通塾あり</label>
+          <label><input type="checkbox"> 低学年</label>
+          <label><input type="checkbox"> 中学年</label>
+          <label><input type="checkbox"> 高学年</label>
+        </div>
+        <div class="juku-name-wrap" data-grade="es" style="display:none">
+          <input type="text" placeholder="塾名（例：日能研、SAPIX…）" style="width:280px;border:1px solid #ccc;border-radius:4px;padding:5px 7px;font-size:12px;background:#fff;color:#1a1a1a">
+        </div>
+      </div>
+    </div>
+    <!-- 中学生 -->
+    <div class="row" style="align-items:flex-start">
+      <span style="font-size:12px;white-space:nowrap;min-width:82px;padding-top:4px">中学生の頃：</span>
+      <div style="flex:1">
+        <div class="check-group" style="margin-bottom:5px">
+          <label><input type="checkbox" class="juku-cb" data-grade="jhs"> 通塾あり</label>
+          <label><input type="checkbox"> 中1</label>
+          <label><input type="checkbox"> 中2</label>
+          <label><input type="checkbox"> 中3</label>
+        </div>
+        <div class="juku-name-wrap" data-grade="jhs" style="display:none">
+          <input type="text" placeholder="塾名（例：明光義塾、個別指導塾…）" style="width:280px;border:1px solid #ccc;border-radius:4px;padding:5px 7px;font-size:12px;background:#fff;color:#1a1a1a">
+        </div>
+      </div>
+    </div>
+    <!-- 高校生 -->
+    <div class="row" style="align-items:flex-start">
+      <span style="font-size:12px;white-space:nowrap;min-width:82px;padding-top:4px">高校生の頃：</span>
+      <div style="flex:1">
+        <div class="check-group" style="margin-bottom:5px">
+          <label><input type="checkbox" class="juku-cb" data-grade="hs"> 通塾あり</label>
+          <label><input type="checkbox"> 高1</label>
+          <label><input type="checkbox"> 高2</label>
+          <label><input type="checkbox"> 高3</label>
+        </div>
+        <div class="juku-name-wrap" data-grade="hs" style="display:none">
+          <input type="text" placeholder="塾名（例：東進、河合塾マナビス…）" style="width:280px;border:1px solid #ccc;border-radius:4px;padding:5px 7px;font-size:12px;background:#fff;color:#1a1a1a">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 指導可能科目 -->
+  <div class="section">
+    <div class="sec-title">指導可能科目</div>
+    <div class="legend">
+      <span>○ = 得意・自信あり</span><span>△ = 対応可能</span><span>× = 対応不可</span>
+      <span style="margin-left:auto;color:#999">空欄 = 未回答</span>
+    </div>
+    <div style="margin-top:7px;overflow-x:auto">
+      <table class="subj-table" id="subjTable"></table>
+    </div>
+  </div>
+
+  <!-- サークル活動 -->
+  <div class="section">
+    <div class="sec-title">サークル活動</div>
+    <div class="row">
+      <label style="font-size:13px">参加中：</label>
+      <div class="radio-group">
+        <label><input type="radio" name="circle" value="あり"> あり</label>
+        <label><input type="radio" name="circle" value="なし"> なし</label>
+      </div>
+    </div>
+    <div id="circleDetail" style="display:none" class="detail-box">
+      <div class="row" style="margin-bottom:9px">
+        <div class="field fw"><label>サークル名</label><input type="text" placeholder="○○サークル"></div>
+      </div>
+      <div style="font-size:11px;color:#666;margin-bottom:6px">活動がある日時（タップで選択）</div>
+      <div id="circleShift"></div>
+    </div>
+  </div>
+
+  <!-- かけもちバイト -->
+  <div class="section">
+    <div class="sec-title">かけもちアルバイト</div>
+    <div class="row">
+      <label style="font-size:13px">かけもちあり：</label>
+      <div class="radio-group">
+        <label><input type="radio" name="baito" value="あり"> あり</label>
+        <label><input type="radio" name="baito" value="なし"> なし</label>
+      </div>
+    </div>
+    <div id="baitoDetail" style="display:none" class="detail-box">
+      <div class="row" style="margin-bottom:9px">
+        <div class="field fw"><label>勤務先</label><input type="text" placeholder="○○店・○○会社など"></div>
+      </div>
+      <div style="font-size:11px;color:#666;margin-bottom:6px">勤務がある日時（タップで選択）</div>
+      <div id="baitoShift"></div>
+    </div>
+  </div>
+
+  <!-- 出勤可能時間 -->
+  <div class="section">
+    <div class="sec-title">出勤可能時間（タップで選択）</div>
+    <div id="mainShift"></div>
+  </div>
+
+  <!-- 備考 -->
+  <div class="section">
+    <div class="sec-title">備考・面接メモ</div>
+    <textarea class="note-area" placeholder="面接官が書き込む欄（印刷後に手書きでもOK）"></textarea>
+  </div>
+
+  <button class="print-btn" onclick="window.print()">🖨️ 印刷する</button>
+</div>
+
+<script>
+const DAYS = ['月','火','水','木','金','土'];
+const SLOTS = ['14:50〜16:20','16:30〜18:00','18:10〜19:40','19:50〜21:20'];
+const SCORE_OPTS = ['—','50%未満','50〜60%','60〜70%','70〜80%','80%以上'];
+const KYOTSU_SUBJ = ['国語','数学ⅠA','数学ⅡB/C','英語(R)','英語(L)','理科①','理科②','社会①','社会②'];
+
+function buildShiftTable(containerId, prefix){
+  const container = document.getElementById(containerId);
+  let html = '<table class="shift-table"><thead><tr><th style="text-align:left;font-size:11px;padding-left:6px">コマ</th>';
+  DAYS.forEach(d => html += '<th>' + d + '</th>');
+  html += '</tr></thead><tbody>';
+  SLOTS.forEach(function(slot, si){
+    html += '<tr><td class="time-label">' + slot + '</td>';
+    DAYS.forEach(function(d, di){
+      var id = prefix + '_' + si + '_' + di;
+      html += '<td><div class="shift-cell off" id="' + id + '" onclick="toggleCell(\'' + id + '\')"></div></td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+function toggleCell(id){
+  var el = document.getElementById(id);
+  if(!el) return;
+  el.classList.toggle('on');
+  el.classList.toggle('off');
+  el.textContent = el.classList.contains('on') ? '●' : '';
+}
+
+function buildSubjTable(){
+  var subjData = {
+    '小学生': ['国語','算数','理科','社会'],
+    '中学生': ['国語','数学','理科','社会','英語'],
+    '高校生': ['現代文','古文','小論文','数ⅠA','数ⅡB','数Ⅲ','数C','英語','世界史','日本史','倫理','政経','現社','地理','物理','化学','生物','地学']
+  };
+  var levels = Object.keys(subjData);
+  var tbl = document.getElementById('subjTable');
+  var html = '<thead><tr><th class="colh" style="min-width:48px">学年</th>';
+  levels.forEach(function(lv){ html += '<th class="colh" colspan="' + subjData[lv].length + '">' + lv + '</th>'; });
+  html += '</tr><tr><th class="colh"></th>';
+  levels.forEach(function(lv){ subjData[lv].forEach(function(s){ html += '<th class="rowh" style="font-size:10px">' + s + '</th>'; }); });
+  html += '</tr></thead><tbody>';
+  ['小学生','中学生','高校生'].forEach(function(grade){
+    var cols = '';
+    levels.forEach(function(lv){
+      subjData[lv].forEach(function(s){
+        if(subjData[grade].indexOf(s) >= 0){
+          cols += '<td><select><option value="">—</option><option>○</option><option>△</option><option>×</option></select></td>';
+        } else {
+          cols += '<td style="background:#f5f5f5"></td>';
+        }
+      });
+    });
+    html += '<tr><td class="colh" style="font-weight:500;white-space:nowrap">' + grade + '</td>' + cols + '</tr>';
+  });
+  html += '</tbody>';
+  tbl.innerHTML = html;
+}
+
+function buildKyotsuRow(){
+  var row = document.getElementById('kyotsuScoreRow');
+  var html = '';
+  KYOTSU_SUBJ.forEach(function(){
+    html += '<td><select>';
+    SCORE_OPTS.forEach(function(o){ html += '<option>' + o + '</option>'; });
+    html += '</select></td>';
+  });
+  row.innerHTML = html;
+}
+
+// ラジオ → 詳細表示制御
+function bindRadio(name, showId, showVal){
+  document.querySelectorAll('[name=' + name + ']').forEach(function(r){
+    r.addEventListener('change', function(){
+      var el = document.getElementById(showId);
+      if(el) el.style.display = (this.value === showVal) ? 'block' : 'none';
+    });
+  });
+}
+
+document.querySelectorAll('[name=jyuken]').forEach(function(r){
+  r.addEventListener('change', function(){
+    var el = document.getElementById('jyukenSchool');
+    if(el) el.style.display = (this.value === 'あり') ? 'flex' : 'none';
+  });
+});
+
+document.querySelectorAll('.juku-cb').forEach(function(cb){
+  cb.addEventListener('change', function(){
+    var grade = this.dataset.grade;
+    var wrap = document.querySelector('.juku-name-wrap[data-grade="' + grade + '"]');
+    if(wrap) wrap.style.display = this.checked ? 'block' : 'none';
+  });
+});
+
+document.getElementById('toeicHave').addEventListener('change', function(){
+  var wrap = document.getElementById('toeicScoreWrap');
+  wrap.style.display = (this.value === 'あり') ? 'inline-flex' : 'none';
+});
+
+bindRadio('kyotsu', 'kyotsuDetail', 'あり');
+bindRadio('circle', 'circleDetail', 'あり');
+bindRadio('baito',  'baitoDetail',  'あり');
+
+buildShiftTable('mainShift',   'main');
+buildShiftTable('circleShift', 'circle');
+buildShiftTable('baitoShift',  'baito');
+buildSubjTable();
+buildKyotsuRow();
+</script>
+</body>
+</html>
