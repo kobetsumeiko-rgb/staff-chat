@@ -250,6 +250,9 @@
     <div style="margin-top:8px;overflow-x:auto">
       <table class="subj-table" id="subjTableB"></table>
     </div>
+    <div style="margin-top:8px;overflow-x:auto">
+      <table class="subj-table" id="subjTableC"></table>
+    </div>
   </div>
 
   <!-- サークル活動 -->
@@ -337,54 +340,67 @@ function toggleCell(id){
 }
 
 function buildSubjTable(){
-  var subjData = {
-    '小学生': ['国語','算数','理科','社会'],
-    '中学生': ['国語','数学','理科','社会','英語'],
-    '高校生A': ['現代文','古文'],
-    '高校生B': ['小論文','数ⅠA','数ⅡB','数Ⅲ','数C','英語','世界史','日本史','倫理','政経','現社','地理','物理','化学','生物','地学']
-  };
+  var esSubj  = ['国語','算数','理科','社会'];
+  var jhsSubj = ['国語','数学','理科','社会','英語'];
+  var hsA     = ['現代文','古文','小論文','数ⅠA','数ⅡB','数Ⅲ','数C','英語'];
+  var hsB     = ['世界史','日本史','倫理','政経','現社','地理','物理','化学','生物','地学'];
 
-  /* テーブルA：小学生・中学生・高校生（前半） */
-  var levelsA = ['小学生','中学生','高校生A'];
+  function makeSelect(){
+    return '<td><select><option value="">—</option><option>○</option><option>△</option><option>×</option></select></td>';
+  }
+  function makeBlank(){
+    return '<td style="background:#f5f5f5"></td>';
+  }
+
+  /* ── テーブルA：小学生 / 中学生 / 高校生前半 ── */
   var tblA = document.getElementById('subjTableA');
-  var htmlA = '<thead><tr><th class="colh" style="min-width:48px">学年</th>';
-  levelsA.forEach(function(lv){
-    var label = lv.replace('A','');
-    htmlA += '<th class="colh" colspan="' + subjData[lv].length + '">' + label + '</th>';
+  var hA = '<thead>';
+  hA += '<tr><th class="colh" style="min-width:46px">学年</th>';
+  hA += '<th class="colh" colspan="'+esSubj.length+'">小学生</th>';
+  hA += '<th class="colh" colspan="'+jhsSubj.length+'">中学生</th>';
+  hA += '<th class="colh" colspan="'+hsA.length+'">高校生</th></tr>';
+  hA += '<tr><th class="colh"></th>';
+  esSubj.concat(jhsSubj).concat(hsA).forEach(function(s){
+    hA += '<th class="rowh" style="font-size:10px">'+s+'</th>';
   });
-  htmlA += '</tr><tr><th class="colh"></th>';
-  levelsA.forEach(function(lv){ subjData[lv].forEach(function(s){ htmlA += '<th class="rowh" style="font-size:10px">' + s + '</th>'; }); });
-  htmlA += '</tr></thead><tbody>';
-  ['小学生','中学生','高校生A'].forEach(function(grade){
-    var gradeLabel = grade.replace('A','');
-    var cols = '';
-    levelsA.forEach(function(lv){
-      subjData[lv].forEach(function(s){
-        if(subjData[grade].indexOf(s) >= 0){
-          cols += '<td><select><option value="">—</option><option>○</option><option>△</option><option>×</option></select></td>';
-        } else {
-          cols += '<td style="background:#f5f5f5"></td>';
-        }
-      });
-    });
-    htmlA += '<tr><td class="colh" style="font-weight:500;white-space:nowrap">' + gradeLabel + '</td>' + cols + '</tr>';
-  });
-  htmlA += '</tbody>';
-  tblA.innerHTML = htmlA;
+  hA += '</tr></thead><tbody>';
+  /* 小学生行 */
+  hA += '<tr><td class="colh" style="font-weight:500">小学生</td>';
+  esSubj.forEach(function(){ hA += makeSelect(); });
+  jhsSubj.forEach(function(){ hA += makeBlank(); });
+  hsA.forEach(function(){ hA += makeBlank(); });
+  hA += '</tr>';
+  /* 中学生行 */
+  hA += '<tr><td class="colh" style="font-weight:500">中学生</td>';
+  esSubj.forEach(function(){ hA += makeBlank(); });
+  jhsSubj.forEach(function(){ hA += makeSelect(); });
+  hsA.forEach(function(){ hA += makeBlank(); });
+  hA += '</tr>';
+  /* 高校生行 */
+  hA += '<tr><td class="colh" style="font-weight:500">高校生</td>';
+  esSubj.forEach(function(){ hA += makeBlank(); });
+  jhsSubj.forEach(function(){ hA += makeBlank(); });
+  hsA.forEach(function(){ hA += makeSelect(); });
+  hA += '</tr>';
+  hA += '</tbody>';
+  tblA.innerHTML = hA;
 
-  /* テーブルB：高校生（後半）のみ */
+  /* ── テーブルB：高校生後半 ── */
   var tblB = document.getElementById('subjTableB');
-  var htmlB = '<thead><tr><th class="colh" style="min-width:48px">学年</th>';
-  htmlB += '<th class="colh" colspan="' + subjData['高校生B'].length + '">高校生（続き）</th>';
-  htmlB += '</tr><tr><th class="colh"></th>';
-  subjData['高校生B'].forEach(function(s){ htmlB += '<th class="rowh" style="font-size:10px">' + s + '</th>'; });
-  htmlB += '</tr></thead><tbody><tr>';
-  htmlB += '<td class="colh" style="font-weight:500;white-space:nowrap">高校生</td>';
-  subjData['高校生B'].forEach(function(){
-    htmlB += '<td><select><option value="">—</option><option>○</option><option>△</option><option>×</option></select></td>';
-  });
-  htmlB += '</tr></tbody>';
-  tblB.innerHTML = htmlB;
+  var hB = '<thead>';
+  hB += '<tr><th class="colh" style="min-width:46px">学年</th>';
+  hB += '<th class="colh" colspan="'+hsB.length+'">高校生（続き）</th></tr>';
+  hB += '<tr><th class="colh"></th>';
+  hsB.forEach(function(s){ hB += '<th class="rowh" style="font-size:10px">'+s+'</th>'; });
+  hB += '</tr></thead><tbody>';
+  hB += '<tr><td class="colh" style="font-weight:500">高校生</td>';
+  hsB.forEach(function(){ hB += makeSelect(); });
+  hB += '</tr></tbody>';
+  tblB.innerHTML = hB;
+
+  /* テーブルCは不要になったので非表示 */
+  var tblC = document.getElementById('subjTableC');
+  if(tblC) tblC.style.display = 'none';
 }
 
 function buildKyotsuRow(){
