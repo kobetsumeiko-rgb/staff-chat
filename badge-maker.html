@@ -8,12 +8,10 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: "Hiragino Kaku Gothic ProN","Meiryo","Yu Gothic",sans-serif;
-    background: #f4f3ef;
-    color: #1a1a1a;
-    min-height: 100vh;
-    padding: 2rem 1rem 4rem;
+    background: #f4f3ef; color: #1a1a1a;
+    min-height: 100vh; padding: 2rem 1rem 4rem;
   }
-  .container { max-width: 680px; margin: 0 auto; }
+  .container { max-width: 700px; margin: 0 auto; }
   h1 {
     font-size: 20px; font-weight: 500; margin-bottom: 1.75rem;
     color: #333; letter-spacing: 0.05em;
@@ -43,40 +41,44 @@
   .color-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   .swatch {
     width: 30px; height: 30px; border-radius: 50%;
-    cursor: pointer; border: 3px solid transparent; transition: transform 0.15s, border-color 0.15s;
+    cursor: pointer; border: 3px solid transparent;
+    transition: transform 0.15s, border-color 0.15s;
   }
   .swatch:hover { transform: scale(1.1); }
   .swatch.selected { border-color: #1a1a1a; transform: scale(1.12); }
 
-  /* 名前リスト */
-  .names-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    gap: 10px;
-    margin-top: 4px;
+  /* 名前入力テーブル */
+  .names-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  .names-table th {
+    font-size: 11px; color: #aaa; font-weight: 500;
+    text-align: left; padding: 0 4px 6px; border-bottom: 1px solid #eee;
   }
-  .name-cell { display: flex; flex-direction: column; gap: 4px; }
-  .name-cell label { font-size: 11px; color: #aaa; }
-  .name-cell input {
-    padding: 8px 10px; font-size: 16px; font-family: inherit;
-    border: 1px solid #ddd; border-radius: 8px;
+  .names-table td { padding: 5px 4px; vertical-align: middle; }
+  .names-table td:first-child { width: 32px; text-align: center; }
+  .num-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #eee; color: #999; font-size: 10px; font-weight: 600;
+  }
+  .num-badge.filled { background: #1D9E75; color: white; }
+  .name-input {
+    width: 100%; padding: 7px 10px; font-size: 15px; font-family: inherit;
+    border: 1px solid #ddd; border-radius: 7px;
     background: #fafaf9; color: #1a1a1a; outline: none;
-    transition: border-color 0.2s; width: 100%;
+    transition: border-color 0.2s;
   }
-  .name-cell input:focus { border-color: #1D9E75; }
-  .name-cell input.has-value { border-color: #1D9E75; background: #fff; }
+  .name-input:focus { border-color: #1D9E75; }
+  .name-input.filled { border-color: #1D9E75; background: #fff; }
 
   /* プレビュー */
-  .preview-section { margin-bottom: 1.1rem; }
   .preview-head {
     font-size: 11px; font-weight: 600; color: #999;
-    letter-spacing: 0.12em; text-transform: uppercase;
-    margin-bottom: 10px;
+    letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px;
   }
   .preview-grid {
-    display: flex; flex-wrap: wrap; gap: 10px;
+    display: flex; flex-wrap: wrap; gap: 12px;
     background: #e8e7e3; border-radius: 14px; padding: 1.25rem;
-    min-height: 100px;
+    min-height: 100px; margin-bottom: 1.1rem;
   }
   .preview-item { position: relative; }
   .preview-num {
@@ -84,41 +86,33 @@
     width: 18px; height: 18px; border-radius: 50%;
     background: #1D9E75; color: white;
     font-size: 10px; font-weight: 600;
-    display: flex; align-items: center; justify-content: center;
-    z-index: 1;
+    display: flex; align-items: center; justify-content: center; z-index: 1;
   }
-  .preview-empty {
-    color: #bbb; font-size: 13px; align-self: center;
-    padding: 0.5rem;
-  }
+  .preview-empty { color: #bbb; font-size: 13px; align-self: center; padding: 0.5rem; }
 
-  /* 印刷ボタン */
+  /* 印刷 */
   .print-btn {
     display: inline-flex; align-items: center; gap: 8px;
     padding: 12px 24px; background: #1D9E75; color: white;
     border: none; border-radius: 8px; font-size: 15px;
-    font-family: inherit; font-weight: 500; cursor: pointer;
-    transition: background 0.2s;
+    font-family: inherit; font-weight: 500; cursor: pointer; transition: background 0.2s;
   }
   .print-btn:hover { background: #178a64; }
-  .print-btn:disabled { background: #aaa; cursor: not-allowed; }
+  .print-btn:disabled { background: #bbb; cursor: not-allowed; }
   .print-btn svg { width: 18px; height: 18px; fill: none; stroke: white; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .print-hint { font-size: 12px; color: #999; margin-top: 8px; line-height: 1.7; }
-  .badge-count { font-size: 13px; color: #666; margin-top: 8px; }
+  .badge-count { font-size: 13px; color: #666; margin-bottom: 12px; }
   .badge-count strong { color: #1D9E75; }
 
   @media print {
     body, .container { display: none !important; }
-    #print-area { display: block !important; }
   }
-  #print-area { display: none; }
 </style>
 </head>
 <body>
 <div class="container">
   <h1><span class="accent"></span>講師名札メーカー</h1>
 
-  <!-- 向き -->
   <div class="card">
     <p class="section-label">向き</p>
     <div class="btn-group">
@@ -127,7 +121,6 @@
     </div>
   </div>
 
-  <!-- フォント -->
   <div class="card">
     <p class="section-label">フォント</p>
     <div class="btn-group">
@@ -137,7 +130,6 @@
     </div>
   </div>
 
-  <!-- カラー -->
   <div class="card">
     <p class="section-label">カラーテーマ</p>
     <div class="color-row">
@@ -152,27 +144,28 @@
     </div>
   </div>
 
-  <!-- 名前入力（最大8人） -->
   <div class="card">
     <p class="section-label">講師名（最大8人）</p>
-    <div class="names-grid" id="namesGrid">
-      <!-- JSで生成 -->
-    </div>
+    <table class="names-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>苗字（漢字）</th>
+          <th>下の名前（ひらがな）</th>
+        </tr>
+      </thead>
+      <tbody id="namesBody"></tbody>
+    </table>
   </div>
 
-  <!-- プレビュー -->
-  <div class="preview-section">
-    <p class="preview-head">プレビュー</p>
-    <div class="preview-grid" id="previewGrid">
-      <span class="preview-empty">名前を入力するとプレビューが表示されます</span>
-    </div>
+  <p class="preview-head">プレビュー</p>
+  <div class="preview-grid" id="previewGrid">
+    <span class="preview-empty">名前を入力するとプレビューが表示されます</span>
   </div>
 
-  <!-- 印刷 -->
   <div class="card">
     <p class="section-label">印刷</p>
     <p class="badge-count" id="badgeCount">入力済み：<strong>0</strong> 人分</p>
-    <br>
     <button class="print-btn" id="printBtn" onclick="doPrint()" disabled>
       <svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
       A4印刷 / PDF保存
@@ -184,8 +177,6 @@
   </div>
 </div>
 
-<div id="print-area"></div>
-
 <script>
   let dir = 'landscape';
   let accentColor = '#1D9E75';
@@ -193,27 +184,37 @@
   const MAX = 8;
   const PX = 2.8;
 
-  // 名前入力欄を生成
-  const grid = document.getElementById('namesGrid');
+  // 入力行を生成
+  const tbody = document.getElementById('namesBody');
   for(let i = 0; i < MAX; i++) {
-    const cell = document.createElement('div');
-    cell.className = 'name-cell';
-    cell.innerHTML = `<label>${i+1}人目</label><input type="text" id="name${i}" maxlength="8" placeholder="例: ゆら" oninput="onNameInput(this)">`;
-    grid.appendChild(cell);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="num-badge" id="badge${i}">${i+1}</span></td>
+      <td><input class="name-input" id="sei${i}" type="text" maxlength="6" placeholder="例: 田中" oninput="onInput()"></td>
+      <td><input class="name-input" id="mei${i}" type="text" maxlength="8" placeholder="例: ゆら" oninput="onInput()"></td>`;
+    tbody.appendChild(tr);
   }
 
-  function onNameInput(el) {
-    el.classList.toggle('has-value', el.value.trim() !== '');
+  function onInput() {
+    for(let i = 0; i < MAX; i++) {
+      const s = document.getElementById('sei'+i).value.trim();
+      const m = document.getElementById('mei'+i).value.trim();
+      const filled = s || m;
+      document.getElementById('sei'+i).classList.toggle('filled', !!s);
+      document.getElementById('mei'+i).classList.toggle('filled', !!m);
+      document.getElementById('badge'+i).classList.toggle('filled', !!filled);
+    }
     renderAll();
   }
 
-  function getNames() {
-    const names = [];
+  function getPeople() {
+    const list = [];
     for(let i = 0; i < MAX; i++) {
-      const v = document.getElementById('name'+i).value.trim();
-      if(v) names.push(v);
+      const sei = document.getElementById('sei'+i).value.trim();
+      const mei = document.getElementById('mei'+i).value.trim();
+      if(sei || mei) list.push({ sei, mei });
     }
-    return names;
+    return list;
   }
 
   function setDir(btn) {
@@ -238,63 +239,60 @@
     renderAll();
   }
 
-  function buildCard(w, h, nameFs, labelFs, schoolFs, isL, name, unit) {
+  // カードHTML生成
+  // レイアウト:
+  //   上帯: 明光義塾ロゴ
+  //   中段: 苗字（小さめ）
+  //   下段: ひらがな名前（大きめ）＋右下に「先生」
+  function buildCard(w, h, isL, sei, mei, unit) {
     const u = unit;
-    const nameTc = accentColor === '#2C2C2A' ? '#fff' : 'white';
-    if(isL) {
-      return `<div style="width:${w}${u};height:${h}${u};display:flex;flex-direction:column;font-family:${fontStack};overflow:hidden;background:#fff;">
-        <div style="background:${accentColor};padding:${Math.round(h*0.07)}${u} ${Math.round(w*0.045)}${u};display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-          <span style="color:${nameTc};font-size:${schoolFs}${u};font-weight:600;letter-spacing:0.05em;">明光義塾</span>
-          <span style="color:${nameTc};opacity:0.8;font-size:${Math.round(schoolFs*0.72)}${u};letter-spacing:0.12em;">MEIKO GIJUKU</span>
+    const tc = (accentColor === '#2C2C2A' || accentColor === '#C49A00') ? (accentColor === '#C49A00' ? '#1a1a1a' : '#fff') : 'white';
+
+    // フォントサイズ
+    const base = isL ? h : w;
+    const schoolFs  = Math.round(base * 0.11);  // ロゴ帯：明光義塾
+    const seiFs     = Math.round(base * 0.16);  // 苗字
+    const meiFs     = Math.round(base * 0.30);  // 下の名前（大きめ）
+    const senseiFs  = Math.round(base * 0.11);  // 「先生」
+
+    // ヘッダー帯の高さ
+    const headerPad = Math.round(base * 0.065);
+
+    return `<div style="width:${w}${u};height:${h}${u};display:flex;flex-direction:column;font-family:${fontStack};overflow:hidden;background:#fff;position:relative;">
+      <!-- ヘッダー帯 -->
+      <div style="background:${accentColor};padding:${headerPad}${u} ${Math.round(w*0.045)}${u};display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+        <span style="color:${tc};font-size:${schoolFs}${u};font-weight:700;letter-spacing:0.06em;">明光義塾</span>
+        <span style="color:${tc};opacity:0.8;font-size:${Math.round(schoolFs*0.68)}${u};letter-spacing:0.12em;">MEIKO GIJUKU</span>
+      </div>
+      <!-- 名前エリア -->
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(base*0.04)}${u} ${Math.round(w*0.05)}${u} ${Math.round(base*0.05)}${u};gap:${Math.round(base*0.01)}${u};">
+        <!-- 苗字 -->
+        <div style="font-size:${seiFs}${u};color:#555;font-weight:500;letter-spacing:0.18em;text-align:center;line-height:1;">${sei || '　'}</div>
+        <!-- 下の名前 ＋ 先生（右下添え） -->
+        <div style="display:flex;align-items:flex-end;gap:${Math.round(base*0.015)}${u};line-height:1;">
+          <span style="font-size:${meiFs}${u};color:#1a1a1a;font-weight:700;letter-spacing:0.04em;line-height:1;">${mei || '　'}</span>
+          <span style="font-size:${senseiFs}${u};color:${accentColor};font-weight:600;letter-spacing:0.05em;padding-bottom:${Math.round(base*0.008)}${u};">先生</span>
         </div>
-        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(h*0.04)}${u} ${Math.round(w*0.05)}${u};gap:${Math.round(h*0.035)}${u};">
-          <span style="font-size:${labelFs}${u};color:${accentColor};font-weight:600;letter-spacing:0.28em;border-bottom:${unit==='mm'?'0.4mm':'1px'} solid ${accentColor};padding-bottom:${Math.round(h*0.022)}${u};width:100%;text-align:center;">講　師</span>
-          <span style="font-size:${nameFs}${u};color:#1a1a1a;font-weight:700;letter-spacing:0.04em;line-height:1;">${name}</span>
-        </div>
-      </div>`;
-    } else {
-      return `<div style="width:${w}${u};height:${h}${u};display:flex;flex-direction:column;font-family:${fontStack};overflow:hidden;background:#fff;">
-        <div style="background:${accentColor};padding:${Math.round(w*0.07)}${u};text-align:center;flex-shrink:0;">
-          <div style="color:${nameTc};font-size:${schoolFs}${u};font-weight:600;letter-spacing:0.05em;">明光義塾</div>
-          <div style="color:${nameTc};opacity:0.8;font-size:${Math.round(schoolFs*0.72)}${u};letter-spacing:0.12em;">MEIKO GIJUKU</div>
-        </div>
-        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${Math.round(w*0.07)}${u};gap:${Math.round(w*0.045)}${u};">
-          <span style="font-size:${labelFs}${u};color:${accentColor};font-weight:600;letter-spacing:0.28em;border-bottom:${unit==='mm'?'0.4mm':'1px'} solid ${accentColor};padding-bottom:${Math.round(w*0.022)}${u};width:100%;text-align:center;">講　師</span>
-          <span style="font-size:${nameFs}${u};color:#1a1a1a;font-weight:700;letter-spacing:0.04em;line-height:1.1;text-align:center;">${name}</span>
-        </div>
-      </div>`;
-    }
+      </div>
+    </div>`;
   }
 
-  function getFontSizesPX(isL) {
-    const wPX = Math.round((isL ? 91 : 55) * PX);
-    const hPX = Math.round((isL ? 55 : 91) * PX);
-    return {
-      w: wPX, h: hPX,
-      name: isL ? Math.round(hPX * 0.38) : Math.round(wPX * 0.38),
-      label: isL ? Math.round(hPX * 0.12) : Math.round(wPX * 0.12),
-      school: isL ? Math.round(hPX * 0.10) : Math.round(wPX * 0.10),
-    };
-  }
-  function getFontSizesMM(isL) {
-    const w = isL ? 91 : 55, h = isL ? 55 : 91;
-    return {
-      w, h,
-      name: isL ? Math.round(h * 0.38) : Math.round(w * 0.38),
-      label: isL ? Math.round(h * 0.12) : Math.round(w * 0.12),
-      school: isL ? Math.round(h * 0.10) : Math.round(w * 0.10),
-    };
+  function getDims(isL, unit) {
+    if(unit === 'px') {
+      return { w: Math.round((isL?91:55)*PX), h: Math.round((isL?55:91)*PX) };
+    }
+    return { w: isL?91:55, h: isL?55:91 };
   }
 
   function renderAll() {
-    const names = getNames();
+    const people = getPeople();
     const isL = dir === 'landscape';
-    const fs = getFontSizesPX(isL);
+    const { w, h } = getDims(isL, 'px');
     const pg = document.getElementById('previewGrid');
     const countEl = document.getElementById('badgeCount');
     const printBtn = document.getElementById('printBtn');
 
-    if(names.length === 0) {
+    if(people.length === 0) {
       pg.innerHTML = '<span class="preview-empty">名前を入力するとプレビューが表示されます</span>';
       countEl.innerHTML = '入力済み：<strong>0</strong> 人分';
       printBtn.disabled = true;
@@ -302,28 +300,29 @@
     }
 
     pg.innerHTML = '';
-    names.forEach((name, i) => {
+    people.forEach(({ sei, mei }, i) => {
       const wrap = document.createElement('div');
       wrap.className = 'preview-item';
-      wrap.innerHTML = `<div class="preview-num">${i+1}</div>` +
-        `<div style="box-shadow:0 3px 12px rgba(0,0,0,0.12);border-radius:6px;overflow:hidden;">` +
-        buildCard(fs.w, fs.h, fs.name, fs.label, fs.school, isL, name, 'px') +
+      wrap.innerHTML =
+        `<div class="preview-num">${i+1}</div>` +
+        `<div style="box-shadow:0 3px 14px rgba(0,0,0,0.13);border-radius:6px;overflow:hidden;">` +
+        buildCard(w, h, isL, sei, mei, 'px') +
         `</div>`;
       pg.appendChild(wrap);
     });
 
-    countEl.innerHTML = `入力済み：<strong>${names.length}</strong> 人分`;
+    countEl.innerHTML = `入力済み：<strong>${people.length}</strong> 人分`;
     printBtn.disabled = false;
   }
 
   function doPrint() {
-    const names = getNames();
-    if(names.length === 0) return;
+    const people = getPeople();
+    if(people.length === 0) return;
     const isL = dir === 'landscape';
-    const fs = getFontSizesMM(isL);
+    const { w, h } = getDims(isL, 'mm');
 
-    let cards = names.map(name =>
-      `<div style="margin:3mm;display:inline-block;">${buildCard(fs.w, fs.h, fs.name, fs.label, fs.school, isL, name, 'mm')}</div>`
+    const cards = people.map(({ sei, mei }) =>
+      `<div style="margin:3mm;display:inline-block;">${buildCard(w, h, isL, sei, mei, 'mm')}</div>`
     ).join('');
 
     const pw = window.open('', '_blank');
@@ -332,7 +331,7 @@
 <style>
   @page { size: A4 portrait; margin: 10mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: white; font-family: "Hiragino Kaku Gothic ProN","Meiryo","Yu Gothic",sans-serif; }
+  body { background: white; }
   .grid { display: flex; flex-wrap: wrap; align-items: flex-start; }
   @media print { * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
 </style></head><body>
