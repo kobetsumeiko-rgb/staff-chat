@@ -330,6 +330,24 @@
       </div>
 
       <div class="card">
+        <div class="card-title">手動でスロットをブロック</div>
+        <p style="font-size:0.78rem;color:var(--gray);margin-bottom:12px;">予約済みにしたい時間を選んでブロックすると、保護者から予約できなくなります。</p>
+        <div class="date-input-row">
+          <div class="fg">
+            <label class="small">日付</label>
+            <input type="date" id="blockDate">
+          </div>
+          <div class="fg">
+            <label class="small">時間</label>
+            <select id="blockTime" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:0.9rem;"></select>
+          </div>
+          <div style="display:flex;align-items:flex-end;">
+            <button class="btn-primary" onclick="blockSlot()" style="width:auto;padding:9px 16px;">ブロック</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
         <div class="card-title">設定済みの空き枠</div>
         <div class="available-dates-list" id="availableDatesList">
           <div class="loading-spinner">読み込み中…</div>
@@ -388,7 +406,53 @@ async function initAdmin() {
 
 function setTodayAsDefault() {
   const today = new Date();
-  document.getElementById('newDate').value = formatDate(today);
+  const todayStr = formatDate(today);
+  document.getElementById('newDate').value = todayStr;
+  document.getElementById('blockDate').value = todayStr;
+  document.getElementById('blockDate').addEventListener('change', updateBlockTimeSelect);
+  updateBlockTimeSelect();
+}
+
+function updateBlockTimeSelect() {
+  const date = document.getElementById('blockDate').value;
+  const sel = document.getElementById('blockTime');
+  sel.innerHTML = '';
+  const slots = allSlots[date] || [];
+  const availableSlots = slots.filter(s => s.available);
+  if (availableSlots.length === 0) {
+    const opt = document.createElement('option');
+    opt.textContent = '空きスロットがありません';
+    opt.disabled = true;
+    sel.appendChild(opt);
+    return;
+  }
+  availableSlots.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.time;
+    opt.textContent = s.time;
+    sel.appendChild(opt);
+  });
+}
+
+async function blockSlot() {
+  const date = document.getElementById('blockDate').value;
+  const time = document.getElementById('blockTime').value;
+  if (!date || !time) { showToast('日付と時間を選んでください'); return; }
+  if (!confirm(`${date} ${time} を予約不可にします。よろしいですか？`)) return;
+
+  try {
+    const res = await fetch(`${WORKER_URL}/booking/admin/block`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Pin': ADMIN_PIN },
+      body: JSON.stringify({ classroom: CLASSROOM, date, time }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast(`✅ ${time} をブロックしました`);
+      await loadSlots();
+      updateBlockTimeSelect();
+    } else throw new Error(data.error);
+  } catch(e) { showToast('エラー: ' + e.message); }
 }
 
 // ===== 時間ボタン生成（8:00〜20:30を30分刻み） =====
