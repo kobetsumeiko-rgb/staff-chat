@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>夏期面談 予約｜明光義塾 安茂里駅前教室</title>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
 
@@ -301,6 +302,19 @@
   }
 
   .error-msg { color: #EF4444; font-size: 0.8rem; margin-top: 6px; }
+
+  /* 受付終了画面 */
+  #closedScreen {
+    display: none;
+    text-align: center;
+    padding: 60px 20px;
+  }
+  #closedScreen .closed-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+  }
+  #closedScreen h2 { font-size: 1.2rem; margin-bottom: 10px; }
+  #closedScreen p { font-size: 0.85rem; color: var(--meiko-gray); line-height: 1.8; }
   .loading { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -330,7 +344,16 @@
   <p>明光義塾 安茂里駅前教室</p>
 </header>
 
-<div class="container">
+<!-- 受付終了画面 -->
+<div id="closedScreen">
+  <div class="card" style="max-width:400px;margin:40px auto;">
+    <div class="closed-icon">🔒</div>
+    <h2>現在、予約受付を停止しています</h2>
+    <p>夏期面談の予約受付期間外です。<br>受付開始までしばらくお待ちください。<br><br>ご不明な点は教室までお問い合わせください。</p>
+  </div>
+</div>
+
+<div class="container" id="mainContainer">
 
   <!-- ステップ表示 -->
   <div class="steps" id="stepsEl">
@@ -434,14 +457,35 @@
 const WORKER_URL = 'https://notion-proxy.kobetsu-meiko.workers.dev';
 const CLASSROOM = 'amorisan';
 
+// ===== EmailJS設定（ここを書き換えてください） =====
+const EMAILJS_SERVICE_ID  = 'service_snmdm3c';   // EmailJSのService ID
+const EMAILJS_TEMPLATE_ID = 'template_x1uds2z';  // EmailJSのTemplate ID
+const EMAILJS_PUBLIC_KEY  = 'EiSv0T7EF_8vii917';   // EmailJSのPublic Key
+const NOTIFY_EMAIL        = 'kobetsu.meiko@gmail.com';    // 通知を受け取るメールアドレス
+
 // ===== 状態 =====
 let currentYear, currentMonth;
 let selectedDate = null;
 let selectedSlot = null;
-let availableDates = {}; // { 'YYYY-MM-DD': ['09:00','09:30',...] }
+let availableDates = {};
 
 // ===== 初期化 =====
 window.onload = async () => {
+  emailjs.init(EMAILJS_PUBLIC_KEY);
+
+  // 受付状態チェック
+  try {
+    const res = await fetch(`${WORKER_URL}/booking/status?classroom=${CLASSROOM}`);
+    const data = await res.json();
+    if (!data.open) {
+      document.getElementById('closedScreen').style.display = 'block';
+      document.getElementById('mainContainer').style.display = 'none';
+      return;
+    }
+  } catch(e) {
+    // チェック失敗時は通常表示
+  }
+
   const now = new Date();
   currentYear = now.getFullYear();
   currentMonth = now.getMonth();
@@ -632,6 +676,24 @@ async function submitBooking() {
     if (data.success) {
       document.getElementById('bookingIdEl').textContent = `予約番号：${data.bookingId}`;
       showSection(5);
+
+      // メール通知
+      const d = new Date(selectedSlot.dateStr);
+      const jaDow = ['日','月','火','水','木','金','土'];
+      const dateLabel = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${jaDow[d.getDay()]}）`;
+      try {
+        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+          to_email:     NOTIFY_EMAIL,
+          student_name: payload.studentName,
+          date_label:   dateLabel,
+          time_label:   `${payload.time}〜${addMinutes(payload.time, 60)}`,
+          memo:         payload.memo || 'なし',
+          booking_id:   data.bookingId,
+        });
+      } catch(mailErr) {
+        console.warn('メール通知失敗:', mailErr);
+        // 通知失敗でも予約は成功扱い
+      }
     } else {
       throw new Error(data.error || '予約に失敗しました');
     }
