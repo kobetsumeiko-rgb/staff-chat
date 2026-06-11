@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>夏期面談 予約｜明光義塾 安茂里駅前教室</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+
+  :root {
+    --meiko-orange: #E8600A;
+    --meiko-orange-light: #FFF0E6;
+    --meiko-dark: #1A1A1A;
+    --meiko-gray: #6B7280;
+    --meiko-line: #E5E7EB;
+    --available: #ECFDF5;
+    --available-border: #10B981;
+    --booked: #F3F4F6;
+    --booked-text: #9CA3AF;
+    --selected: #E8600A;
+    --selected-text: #fff;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: #F8F7F4;
+    color: var(--meiko-dark);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--meiko-orange);
+    color: white;
+    padding: 18px 20px;
+    text-align: center;
+  }
+  header h1 { font-size: 1.05rem; font-weight: 700; letter-spacing: 0.05em; }
+  header p { font-size: 0.78rem; opacity: 0.9; margin-top: 4px; }
+
+  .container { max-width: 480px; margin: 0 auto; padding: 20px 16px 60px; }
+
+  /* ステップインジケーター */
+  .steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 24px;
+  }
+  .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .step-circle {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; font-weight: 700;
+    background: var(--meiko-line);
+    color: var(--meiko-gray);
+    transition: all 0.3s;
+  }
+  .step.active .step-circle { background: var(--meiko-orange); color: white; }
+  .step.done .step-circle { background: #10B981; color: white; }
+  .step-label { font-size: 0.65rem; color: var(--meiko-gray); }
+  .step.active .step-label { color: var(--meiko-orange); font-weight: 700; }
+  .step-line { width: 32px; height: 2px; background: var(--meiko-line); margin-bottom: 16px; }
+
+  /* カード */
+  .card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .card-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--meiko-gray);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: block;
+    width: 3px; height: 14px;
+    background: var(--meiko-orange);
+    border-radius: 2px;
+  }
+
+  /* 月ナビゲーション */
+  .month-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .month-nav button {
+    background: none;
+    border: 1px solid var(--meiko-line);
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 1rem;
+    color: var(--meiko-gray);
+    transition: all 0.2s;
+  }
+  .month-nav button:hover { border-color: var(--meiko-orange); color: var(--meiko-orange); }
+  .month-nav .month-label { font-weight: 700; font-size: 1rem; }
+
+  /* カレンダー */
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .cal-header {
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--meiko-gray);
+    padding: 4px 0;
+    font-weight: 700;
+  }
+  .cal-header.sun { color: #EF4444; }
+  .cal-header.sat { color: #3B82F6; }
+
+  .cal-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    border: 2px solid transparent;
+  }
+  .cal-day.empty { cursor: default; }
+  .cal-day.past { color: var(--booked-text); cursor: default; }
+  .cal-day.no-slots { color: var(--booked-text); cursor: default; }
+  .cal-day.has-slots {
+    color: var(--meiko-dark);
+    background: var(--available);
+    border-color: var(--available-border);
+  }
+  .cal-day.has-slots:hover { background: #D1FAE5; }
+  .cal-day.selected {
+    background: var(--meiko-orange) !important;
+    border-color: var(--meiko-orange) !important;
+    color: white !important;
+    font-weight: 700;
+  }
+  .cal-day.sun-text { color: #EF4444; }
+  .cal-day.sat-text { color: #3B82F6; }
+
+  /* 凡例 */
+  .legend {
+    display: flex;
+    gap: 14px;
+    margin-top: 10px;
+    font-size: 0.7rem;
+    color: var(--meiko-gray);
+    flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-dot {
+    width: 12px; height: 12px;
+    border-radius: 3px;
+    border: 1.5px solid;
+  }
+  .legend-dot.available { background: var(--available); border-color: var(--available-border); }
+  .legend-dot.none { background: #F3F4F6; border-color: #D1D5DB; }
+
+  /* 時間スロット */
+  .slots-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .slot-btn {
+    padding: 12px 6px;
+    border-radius: 8px;
+    border: 2px solid var(--meiko-line);
+    background: white;
+    cursor: pointer;
+    text-align: center;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--meiko-dark);
+    transition: all 0.15s;
+  }
+  .slot-btn:hover:not(:disabled) { border-color: var(--meiko-orange); color: var(--meiko-orange); background: var(--meiko-orange-light); }
+  .slot-btn:disabled { background: var(--booked); color: var(--booked-text); cursor: not-allowed; border-color: var(--meiko-line); font-weight: 400; }
+  .slot-btn.selected { background: var(--meiko-orange); border-color: var(--meiko-orange); color: white; }
+  .slot-btn .slot-sub { font-size: 0.65rem; font-weight: 400; display: block; margin-top: 2px; }
+
+  /* 入力フォーム */
+  .form-group { margin-bottom: 16px; }
+  label { display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 6px; }
+  label span { color: #EF4444; margin-left: 2px; }
+  input[type="text"], textarea {
+    width: 100%;
+    border: 1px solid var(--meiko-line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input[type="text"]:focus, textarea:focus { border-color: var(--meiko-orange); }
+  textarea { resize: vertical; min-height: 70px; }
+  .input-hint { font-size: 0.72rem; color: var(--meiko-gray); margin-top: 4px; }
+
+  /* 確認ボックス */
+  .confirm-box {
+    background: var(--meiko-orange-light);
+    border: 1.5px solid var(--meiko-orange);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+  .confirm-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 5px 0;
+    font-size: 0.88rem;
+  }
+  .confirm-row:not(:last-child) { border-bottom: 1px solid #F9C8A0; }
+  .confirm-label { color: var(--meiko-gray); font-size: 0.78rem; }
+  .confirm-value { font-weight: 700; }
+
+  /* ボタン */
+  .btn-primary {
+    width: 100%;
+    background: var(--meiko-orange);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 15px;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.03em;
+  }
+  .btn-primary:hover { background: #C7520A; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(232,96,10,0.3); }
+  .btn-primary:disabled { background: #D1D5DB; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-secondary {
+    width: 100%;
+    background: white;
+    color: var(--meiko-gray);
+    border: 1px solid var(--meiko-line);
+    border-radius: 10px;
+    padding: 13px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--meiko-gray); }
+
+  /* 完了画面 */
+  .success-screen { text-align: center; padding: 30px 0; }
+  .success-icon {
+    width: 72px; height: 72px;
+    background: #D1FAE5;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 2rem;
+  }
+  .success-screen h2 { font-size: 1.3rem; margin-bottom: 8px; }
+  .success-screen p { font-size: 0.85rem; color: var(--meiko-gray); line-height: 1.7; }
+  .booking-id {
+    display: inline-block;
+    background: var(--meiko-orange-light);
+    border: 1px solid var(--meiko-orange);
+    border-radius: 6px;
+    padding: 6px 16px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--meiko-orange);
+    margin: 14px 0;
+    letter-spacing: 0.1em;
+  }
+
+  .error-msg { color: #EF4444; font-size: 0.8rem; margin-top: 6px; }
+  .loading { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* 選択済みバッジ */
+  .selected-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--meiko-orange-light);
+    border: 1px solid var(--meiko-orange);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--meiko-orange);
+    margin-bottom: 12px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>夏期面談 ご予約</h1>
+  <p>明光義塾 安茂里駅前教室</p>
+</header>
+
+<div class="container">
+
+  <!-- ステップ表示 -->
+  <div class="steps" id="stepsEl">
+    <div class="step active" id="step1El">
+      <div class="step-circle">1</div>
+      <div class="step-label">日程選択</div>
+    </div>
+    <div class="step-line"></div>
+    <div class="step active" id="step2El" style="opacity:0.4">
+      <div class="step-circle">2</div>
+      <div class="step-label">時間選択</div>
+    </div>
+    <div class="step-line"></div>
+    <div class="step" id="step3El" style="opacity:0.4">
+      <div class="step-circle">3</div>
+      <div class="step-label">お名前入力</div>
+    </div>
+    <div class="step-line"></div>
+    <div class="step" id="step4El" style="opacity:0.4">
+      <div class="step-circle">4</div>
+      <div class="step-label">確認・予約</div>
+    </div>
+  </div>
+
+  <!-- セクション1: カレンダー -->
+  <div class="section active" id="sec1">
+    <div class="card">
+      <div class="card-title">日程を選ぶ</div>
+      <div class="month-nav">
+        <button onclick="changeMonth(-1)">‹</button>
+        <span class="month-label" id="monthLabel"></span>
+        <button onclick="changeMonth(1)">›</button>
+      </div>
+      <div class="calendar-grid" id="calGrid"></div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot available"></div>予約可能</div>
+        <div class="legend-item"><div class="legend-dot none"></div>予約なし／満枠</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- セクション2: 時間スロット -->
+  <div class="section" id="sec2">
+    <div class="card">
+      <div class="card-title">時間を選ぶ</div>
+      <div class="selected-badge" id="selectedDateBadge">📅 </div>
+      <div class="slots-grid" id="slotsGrid"></div>
+      <button class="btn-secondary" onclick="goBack(1)">← 日程を選び直す</button>
+    </div>
+  </div>
+
+  <!-- セクション3: 名前入力 -->
+  <div class="section" id="sec3">
+    <div class="card">
+      <div class="card-title">お名前を入力</div>
+      <div class="selected-badge" id="selectedSlotBadge">🕐 </div>
+      <div class="form-group">
+        <label>塾生のお名前<span>*</span></label>
+        <input type="text" id="studentName" placeholder="例：山田 太郎" maxlength="30">
+        <div class="input-hint">漢字・ひらがなどちらでも構いません</div>
+        <div class="error-msg" id="nameError"></div>
+      </div>
+      <div class="form-group">
+        <label>ご要望・ご連絡事項（任意）</label>
+        <textarea id="memo" placeholder="ご質問やご要望があればご記入ください"></textarea>
+      </div>
+      <button class="btn-primary" onclick="goToConfirm()">内容を確認する</button>
+      <button class="btn-secondary" onclick="goBack(2)">← 時間を選び直す</button>
+    </div>
+  </div>
+
+  <!-- セクション4: 確認 -->
+  <div class="section" id="sec4">
+    <div class="card">
+      <div class="card-title">予約内容の確認</div>
+      <div class="confirm-box" id="confirmBox"></div>
+      <button class="btn-primary" id="submitBtn" onclick="submitBooking()">この内容で予約する</button>
+      <button class="btn-secondary" onclick="goBack(3)">← 修正する</button>
+      <div class="error-msg" style="text-align:center;margin-top:10px" id="submitError"></div>
+    </div>
+  </div>
+
+  <!-- セクション5: 完了 -->
+  <div class="section" id="sec5">
+    <div class="card">
+      <div class="success-screen">
+        <div class="success-icon">✅</div>
+        <h2>予約完了しました</h2>
+        <p>ご予約ありがとうございます。<br>面談当日はお時間までにお越しください。</p>
+        <div class="booking-id" id="bookingIdEl"></div>
+        <p style="font-size:0.78rem;color:#9CA3AF;margin-top:8px">※ この番号は変更・確認の際に必要です</p>
+      </div>
+    </div>
+    <button class="btn-secondary" onclick="resetAll()">最初に戻る</button>
+  </div>
+
+</div>
+
+<script>
+// ===== 設定 =====
+const WORKER_URL = 'https://notion-proxy.kobetsu-meiko.workers.dev';
+const CLASSROOM = 'amorisan';
+
+// ===== 状態 =====
+let currentYear, currentMonth;
+let selectedDate = null;
+let selectedSlot = null;
+let availableDates = {}; // { 'YYYY-MM-DD': ['09:00','09:30',...] }
+
+// ===== 初期化 =====
+window.onload = async () => {
+  const now = new Date();
+  currentYear = now.getFullYear();
+  currentMonth = now.getMonth();
+  await loadAvailability();
+  renderCalendar();
+};
+
+async function loadAvailability() {
+  try {
+    const res = await fetch(`${WORKER_URL}/booking/slots?classroom=${CLASSROOM}`);
+    const data = await res.json();
+    availableDates = data.slots || {};
+  } catch(e) {
+    console.error('スロット取得失敗', e);
+    availableDates = {};
+  }
+}
+
+// ===== カレンダー =====
+function renderCalendar() {
+  const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  document.getElementById('monthLabel').textContent = `${currentYear}年 ${monthNames[currentMonth]}`;
+
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+
+  const headers = ['日','月','火','水','木','金','土'];
+  const classes = ['sun','','','','','','sat'];
+  headers.forEach((h,i) => {
+    const el = document.createElement('div');
+    el.className = `cal-header ${classes[i]}`;
+    el.textContent = h;
+    grid.appendChild(el);
+  });
+
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  for (let i = 0; i < firstDay; i++) {
+    const el = document.createElement('div');
+    el.className = 'cal-day empty';
+    grid.appendChild(el);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(currentYear, currentMonth, d);
+    const dateStr = formatDate(date);
+    const el = document.createElement('div');
+    const dow = date.getDay();
+    let classes = 'cal-day';
+
+    if (date < today) {
+      classes += ' past';
+    } else if (availableDates[dateStr] && availableDates[dateStr].length > 0) {
+      classes += ' has-slots';
+      if (dow === 0) classes += ' sun-text';
+      if (dow === 6) classes += ' sat-text';
+      if (dateStr === selectedDate) classes += ' selected';
+      el.onclick = () => selectDate(dateStr);
+    } else {
+      classes += ' no-slots';
+      if (dow === 0) classes += ' sun-text';
+      if (dow === 6) classes += ' sat-text';
+    }
+
+    el.className = classes;
+    el.textContent = d;
+    grid.appendChild(el);
+  }
+}
+
+function changeMonth(dir) {
+  currentMonth += dir;
+  if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+  if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+  renderCalendar();
+}
+
+// ===== 日付選択 =====
+function selectDate(dateStr) {
+  selectedDate = dateStr;
+  renderCalendar();
+
+  const slots = availableDates[dateStr] || [];
+  renderSlots(slots, dateStr);
+  showSection(2);
+}
+
+// ===== スロット表示 =====
+async function renderSlots(slots, dateStr) {
+  const grid = document.getElementById('slotsGrid');
+  grid.innerHTML = '<div style="text-align:center;color:#9CA3AF;font-size:0.85rem">読み込み中…</div>';
+
+  // 最新の予約状況を取得
+  try {
+    const res = await fetch(`${WORKER_URL}/booking/slots?classroom=${CLASSROOM}&date=${dateStr}`);
+    const data = await res.json();
+    slots = data.slots?.[dateStr] || slots;
+  } catch(e) {}
+
+  const jaDow = ['日','月','火','水','木','金','土'];
+  const d = new Date(dateStr);
+  document.getElementById('selectedDateBadge').textContent =
+    `📅 ${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${jaDow[d.getDay()]}）`;
+
+  grid.innerHTML = '';
+  if (slots.length === 0) {
+    grid.innerHTML = '<div style="grid-column:span 3;text-align:center;color:#9CA3AF;font-size:0.85rem;padding:20px">この日は空きがありません</div>';
+    return;
+  }
+
+  slots.forEach(slot => {
+    const btn = document.createElement('button');
+    btn.className = 'slot-btn' + (slot.available ? '' : '') + (slot.time === selectedSlot?.time && dateStr === selectedDate ? ' selected' : '');
+    btn.disabled = !slot.available;
+    const endTime = addMinutes(slot.time, 60);
+    btn.innerHTML = `${slot.time}<span class="slot-sub">${slot.available ? `〜${endTime}` : '予約済'}</span>`;
+    if (slot.available) {
+      btn.onclick = () => selectSlot(slot.time, dateStr);
+    }
+    grid.appendChild(btn);
+  });
+}
+
+function addMinutes(timeStr, mins) {
+  const [h, m] = timeStr.split(':').map(Number);
+  const total = h * 60 + m + mins;
+  return `${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
+}
+
+function selectSlot(time, dateStr) {
+  selectedSlot = { time, dateStr };
+  const jaDow = ['日','月','火','水','木','金','土'];
+  const d = new Date(dateStr);
+  document.getElementById('selectedSlotBadge').textContent =
+    `🕐 ${d.getMonth()+1}月${d.getDate()}日（${jaDow[d.getDay()]}） ${time}〜${addMinutes(time,60)}`;
+  showSection(3);
+}
+
+// ===== 確認画面 =====
+function goToConfirm() {
+  const name = document.getElementById('studentName').value.trim();
+  if (!name) {
+    document.getElementById('nameError').textContent = 'お名前を入力してください';
+    return;
+  }
+  document.getElementById('nameError').textContent = '';
+
+  const d = new Date(selectedSlot.dateStr);
+  const jaDow = ['日','月','火','水','木','金','土'];
+  const dateLabel = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${jaDow[d.getDay()]}）`;
+  const timeLabel = `${selectedSlot.time}〜${addMinutes(selectedSlot.time,60)}（60分）`;
+  const memo = document.getElementById('memo').value.trim();
+
+  document.getElementById('confirmBox').innerHTML = `
+    <div class="confirm-row"><span class="confirm-label">教室</span><span class="confirm-value">安茂里駅前教室</span></div>
+    <div class="confirm-row"><span class="confirm-label">塾生のお名前</span><span class="confirm-value">${name} 様</span></div>
+    <div class="confirm-row"><span class="confirm-label">面談日</span><span class="confirm-value">${dateLabel}</span></div>
+    <div class="confirm-row"><span class="confirm-label">時間</span><span class="confirm-value">${timeLabel}</span></div>
+    ${memo ? `<div class="confirm-row"><span class="confirm-label">ご要望</span><span class="confirm-value" style="font-size:0.82rem">${memo}</span></div>` : ''}
+  `;
+  showSection(4);
+}
+
+// ===== 予約送信 =====
+async function submitBooking() {
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading"></span>予約処理中…';
+  document.getElementById('submitError').textContent = '';
+
+  const payload = {
+    classroom: CLASSROOM,
+    date: selectedSlot.dateStr,
+    time: selectedSlot.time,
+    studentName: document.getElementById('studentName').value.trim(),
+    memo: document.getElementById('memo').value.trim(),
+  };
+
+  try {
+    const res = await fetch(`${WORKER_URL}/booking/reserve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('bookingIdEl').textContent = `予約番号：${data.bookingId}`;
+      showSection(5);
+    } else {
+      throw new Error(data.error || '予約に失敗しました');
+    }
+  } catch(e) {
+    document.getElementById('submitError').textContent = e.message || 'エラーが発生しました。もう一度お試しください。';
+    btn.disabled = false;
+    btn.innerHTML = 'この内容で予約する';
+  }
+}
+
+// ===== ナビゲーション =====
+function showSection(n) {
+  document.querySelectorAll('.section').forEach((el,i) => {
+    el.classList.toggle('active', i === n - 1);
+  });
+  updateSteps(n);
+  window.scrollTo(0, 0);
+}
+
+function goBack(n) { showSection(n); }
+
+function updateSteps(n) {
+  [1,2,3,4].forEach(i => {
+    const el = document.getElementById(`step${i}El`);
+    if (!el) return;
+    el.style.opacity = '1';
+    el.querySelector('.step-circle').style.background = '';
+    if (i < n) {
+      el.classList.remove('active');
+      el.classList.add('done');
+    } else if (i === n) {
+      el.classList.add('active');
+      el.classList.remove('done');
+    } else {
+      el.classList.remove('active','done');
+      el.style.opacity = '0.4';
+    }
+  });
+}
+
+function resetAll() {
+  selectedDate = null;
+  selectedSlot = null;
+  document.getElementById('studentName').value = '';
+  document.getElementById('memo').value = '';
+  loadAvailability().then(() => renderCalendar());
+  showSection(1);
+}
+
+function formatDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+</script>
+</body>
+</html>
