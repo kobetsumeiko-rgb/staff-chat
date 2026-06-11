@@ -286,6 +286,22 @@
   </header>
 
   <div class="main-container">
+
+    <!-- 受付状態カード -->
+    <div class="card" id="statusCard" style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+      <div>
+        <div style="font-weight:700;font-size:0.95rem;">予約受付</div>
+        <div style="font-size:0.78rem;color:var(--gray);margin-top:3px;" id="statusDesc">読み込み中…</div>
+      </div>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;">
+        <span id="statusLabel" style="font-size:0.85rem;font-weight:700;color:var(--gray);">OFF</span>
+        <div style="position:relative;width:50px;height:28px;" onclick="toggleStatus()">
+          <div id="switchTrack" style="width:50px;height:28px;border-radius:14px;background:#D1D5DB;transition:background 0.2s;"></div>
+          <div id="switchThumb" style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:white;box-shadow:0 1px 4px rgba(0,0,0,0.2);transition:left 0.2s;"></div>
+        </div>
+      </label>
+    </div>
+
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('slots')">📅 空き枠設定</button>
       <button class="tab-btn" onclick="switchTab('bookings')">📋 予約一覧</button>
@@ -367,7 +383,7 @@ function checkPin() {
 async function initAdmin() {
   setupTimeButtons();
   setTodayAsDefault();
-  await Promise.all([loadSlots(), loadBookings()]);
+  await Promise.all([loadSlots(), loadBookings(), loadStatus()]);
 }
 
 function setTodayAsDefault() {
@@ -645,6 +661,61 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ===== 受付状態 =====
+let bookingOpen = false;
+
+async function loadStatus() {
+  try {
+    const res = await fetch(`${WORKER_URL}/booking/status?classroom=${CLASSROOM}`, {
+      headers: { 'X-Admin-Pin': ADMIN_PIN }
+    });
+    const data = await res.json();
+    bookingOpen = !!data.open;
+    renderSwitch();
+  } catch(e) {
+    document.getElementById('statusDesc').textContent = '状態の取得に失敗しました';
+  }
+}
+
+function renderSwitch() {
+  const track = document.getElementById('switchTrack');
+  const thumb = document.getElementById('switchThumb');
+  const label = document.getElementById('statusLabel');
+  const desc  = document.getElementById('statusDesc');
+  if (bookingOpen) {
+    track.style.background = '#10B981';
+    thumb.style.left = '25px';
+    label.textContent = 'ON';
+    label.style.color = '#10B981';
+    desc.textContent = '受付中 ― 保護者が予約できます';
+  } else {
+    track.style.background = '#D1D5DB';
+    thumb.style.left = '3px';
+    label.textContent = 'OFF';
+    label.style.color = 'var(--gray)';
+    desc.textContent = '受付停止中 ― 保護者画面は閉鎖されています';
+  }
+}
+
+async function toggleStatus() {
+  const next = !bookingOpen;
+  try {
+    const res = await fetch(`${WORKER_URL}/booking/admin/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Pin': ADMIN_PIN },
+      body: JSON.stringify({ classroom: CLASSROOM, open: next }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      bookingOpen = next;
+      renderSwitch();
+      showToast(next ? '✅ 予約受付を開始しました' : '🔒 予約受付を停止しました');
+    } else throw new Error(data.error);
+  } catch(e) {
+    showToast('エラー: ' + e.message);
+  }
 }
 </script>
 </body>
