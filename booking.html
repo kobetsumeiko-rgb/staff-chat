@@ -444,7 +444,11 @@
         <h2>予約完了しました</h2>
         <p>ご予約ありがとうございます。<br>面談当日はお時間までにお越しください。</p>
         <div class="booking-id" id="bookingIdEl"></div>
-        <p style="font-size:0.78rem;color:#9CA3AF;margin-top:8px">※ この番号は変更・確認の際に必要です</p>
+        <div id="confirmedDetail" style="margin:12px 0;font-size:0.9rem;font-weight:700;color:#E8600A;line-height:1.8;"></div>
+        <div style="background:#FFF3CD;border:1.5px solid #FFC107;border-radius:10px;padding:12px 16px;margin-top:8px;">
+          <p style="font-size:0.85rem;color:#856404;font-weight:700;margin-bottom:4px;">📸 この画面をスクリーンショットして保存してください</p>
+          <p style="font-size:0.78rem;color:#856404;">予約日時の確認にご利用いただけます</p>
+        </div>
       </div>
     </div>
     <button class="btn-secondary" onclick="resetAll()">最初に戻る</button>
@@ -458,10 +462,10 @@ const WORKER_URL = 'https://notion-proxy.kobetsu-meiko.workers.dev';
 const CLASSROOM = 'amorisan';
 
 // ===== EmailJS設定（ここを書き換えてください） =====
-const EMAILJS_SERVICE_ID  = 'service_snmdm3c';   // EmailJSのService ID
-const EMAILJS_TEMPLATE_ID = 'template_x1uds2z';  // EmailJSのTemplate ID
-const EMAILJS_PUBLIC_KEY  = 'EiSv0T7EF_8vii917';   // EmailJSのPublic Key
-const NOTIFY_EMAIL        = 'kobetsu.meiko@gmail.com';    // 通知を受け取るメールアドレス
+const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';   // EmailJSのService ID
+const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';  // EmailJSのTemplate ID
+const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';   // EmailJSのPublic Key
+const NOTIFY_EMAIL        = 'your@email.com';    // 通知を受け取るメールアドレス
 
 // ===== 状態 =====
 let currentYear, currentMonth;
@@ -675,6 +679,11 @@ async function submitBooking() {
     const data = await res.json();
     if (data.success) {
       document.getElementById('bookingIdEl').textContent = `予約番号：${data.bookingId}`;
+      // 予約日時を大きく表示
+      const _d = new Date(selectedSlot.dateStr);
+      const _dow = ['日','月','火','水','木','金','土'];
+      document.getElementById('confirmedDetail').innerHTML =
+        `${_d.getFullYear()}年${_d.getMonth()+1}月${_d.getDate()}日（${_dow[_d.getDay()]}）<br>${selectedSlot.time}〜${addMinutes(selectedSlot.time,60)}`;
       showSection(5);
 
       // メール通知
