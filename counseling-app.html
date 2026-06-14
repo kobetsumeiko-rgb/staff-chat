@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>保護者カウンセリング提案書 作成ツール</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Hiragino Sans','Yu Gothic UI',sans-serif;background:#f5f7fa;color:#1a1a2e;min-height:100vh}
+
+/* Header */
+.app-header{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);color:#fff;padding:20px 24px;display:flex;align-items:center;gap:14px}
+.app-header .logo{width:40px;height:40px;background:#e94560;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;flex-shrink:0}
+.app-header h1{font-size:18px;font-weight:700;letter-spacing:.03em}
+.app-header p{font-size:12px;opacity:.7;margin-top:2px}
+
+/* Step indicator */
+.step-bar{background:#fff;border-bottom:1px solid #e8eaf0;padding:0 24px;display:flex;gap:0}
+.step-item{flex:1;padding:14px 8px 12px;text-align:center;font-size:12px;color:#9095a0;border-bottom:3px solid transparent;cursor:pointer;transition:.2s;position:relative}
+.step-item.active{color:#1a1a2e;font-weight:700;border-bottom-color:#e94560}
+.step-item.done{color:#0f7b6c}
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#e8eaf0;font-size:11px;font-weight:700;margin-right:6px;color:#9095a0}
+.step-item.active .step-num{background:#e94560;color:#fff}
+.step-item.done .step-num{background:#0f7b6c;color:#fff}
+
+/* Main */
+.main{max-width:780px;margin:0 auto;padding:28px 20px 60px}
+
+/* Section cards */
+.card{background:#fff;border-radius:14px;border:1px solid #e8eaf0;margin-bottom:18px;overflow:hidden}
+.card-header{padding:16px 20px 12px;border-bottom:1px solid #f0f2f7;display:flex;align-items:center;gap:10px}
+.card-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.card-header h2{font-size:15px;font-weight:700;color:#1a1a2e}
+.card-header p{font-size:12px;color:#9095a0;margin-top:2px}
+.card-body{padding:18px 20px}
+
+/* Form elements */
+label{display:block;font-size:13px;font-weight:600;color:#3d4050;margin-bottom:6px}
+.hint{font-size:11px;color:#9095a0;margin-top:3px;font-weight:400}
+input[type=text],input[type=number],select,textarea{width:100%;padding:10px 13px;border:1.5px solid #e0e4ee;border-radius:9px;font-size:14px;font-family:inherit;background:#fff;color:#1a1a2e;transition:.15s;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#e94560;box-shadow:0 0 0 3px rgba(233,69,96,.08)}
+textarea{resize:vertical;line-height:1.6}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24'%3E%3Cpath fill='%239095a0' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px;cursor:pointer}
+
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.form-group{margin-bottom:16px}
+.form-group:last-child{margin-bottom:0}
+
+/* Score inputs */
+.score-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.score-item label{font-size:12px;font-weight:600;color:#5a6272;margin-bottom:5px}
+.score-item input{text-align:center;font-size:16px;font-weight:700;color:#1a1a2e}
+.score-total{background:#f5f7fa;border-radius:10px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+.score-total span{font-size:13px;color:#5a6272}
+.score-total strong{font-size:22px;color:#1a1a2e;font-weight:700}
+
+/* Subject checkboxes */
+.subject-grid{display:flex;flex-wrap:wrap;gap:8px}
+.subject-chip{display:flex;align-items:center;gap:6px;padding:7px 13px;border:1.5px solid #e0e4ee;border-radius:50px;cursor:pointer;font-size:13px;font-weight:600;transition:.15s;color:#5a6272;background:#fff}
+.subject-chip input{display:none}
+.subject-chip.checked{border-color:#e94560;background:#fff5f7;color:#e94560}
+
+/* Aspirations */
+.aspiration-row{display:grid;grid-template-columns:1fr 140px;gap:10px;align-items:end;margin-bottom:10px}
+
+/* Attendance */
+.attend-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.attend-card{border:1.5px solid #e0e4ee;border-radius:10px;padding:12px;cursor:pointer;transition:.15s;text-align:center}
+.attend-card.selected{border-color:#e94560;background:#fff5f7}
+.attend-card .at-num{font-size:24px;font-weight:700;color:#1a1a2e;line-height:1}
+.attend-card .at-label{font-size:11px;color:#9095a0;margin-top:4px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:.15s;font-family:inherit}
+.btn-primary{background:#e94560;color:#fff}
+.btn-primary:hover{background:#d63651}
+.btn-secondary{background:#f0f2f7;color:#5a6272}
+.btn-secondary:hover{background:#e4e7ef}
+.btn-full{width:100%}
+.btn-lg{padding:15px 32px;font-size:16px;border-radius:12px}
+.actions{display:flex;gap:10px;margin-top:20px}
+
+/* Analysis / output */
+.output-section{background:#fff;border-radius:14px;border:1px solid #e8eaf0;padding:24px;margin-bottom:18px}
+.output-section h3{font-size:16px;font-weight:700;color:#1a1a2e;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #f0f2f7}
+.analysis-block{background:#f8faff;border-left:4px solid #3a86ff;border-radius:0 10px 10px 0;padding:14px 16px;margin-bottom:12px}
+.analysis-block.warning{border-left-color:#ff9f43;background:#fffbf5}
+.analysis-block.success{border-left-color:#0f7b6c;background:#f3fcfa}
+.analysis-block.danger{border-left-color:#e94560;background:#fff5f7}
+.analysis-block h4{font-size:13px;font-weight:700;margin-bottom:6px}
+.analysis-block p{font-size:13px;line-height:1.7;color:#3d4050}
+.analysis-block.info h4{color:#185fa5}
+.analysis-block.warning h4{color:#b46d00}
+.analysis-block.success h4{color:#0b5a50}
+.analysis-block.danger h4{color:#c02040}
+
+.proposal-box{border:1.5px solid #e94560;border-radius:12px;padding:18px;background:#fff5f7;margin-bottom:14px}
+.proposal-box h4{font-size:14px;font-weight:700;color:#e94560;margin-bottom:10px}
+.proposal-item{display:flex;gap:10px;margin-bottom:8px;font-size:13px;line-height:1.6;color:#3d4050}
+.proposal-item::before{content:"▸";color:#e94560;flex-shrink:0;margin-top:1px}
+
+/* Summer schedule table */
+.summer-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+.summer-table th{background:#1a1a2e;color:#fff;padding:9px 12px;text-align:left;font-weight:600}
+.summer-table td{padding:9px 12px;border-bottom:1px solid #f0f2f7;vertical-align:top}
+.summer-table tr:last-child td{border-bottom:none}
+.summer-table tr:hover td{background:#fafbff}
+.badge{display:inline-block;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700}
+.badge-red{background:#fff0f3;color:#e94560}
+.badge-blue{background:#f0f6ff;color:#3a86ff}
+.badge-green{background:#f0faf8;color:#0f7b6c}
+.badge-gray{background:#f2f3f7;color:#5a6272}
+
+/* Cost summary */
+.cost-box{background:#1a1a2e;color:#fff;border-radius:12px;padding:18px;margin-top:14px}
+.cost-row{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;opacity:.8;border-bottom:1px solid rgba(255,255,255,.08)}
+.cost-row:last-child{border-bottom:none;opacity:1;font-size:16px;font-weight:700;padding-top:10px;margin-top:4px}
+.cost-row:last-child span:last-child{color:#ffd166}
+
+/* Loading */
+.loading{text-align:center;padding:50px 20px}
+.spinner{width:44px;height:44px;border:4px solid #f0f2f7;border-top-color:#e94560;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading p{font-size:14px;color:#5a6272}
+
+/* Print button */
+.print-bar{background:#1a1a2e;position:sticky;bottom:0;padding:14px 20px;display:flex;gap:10px;justify-content:flex-end}
+.print-bar .btn{font-size:13px;padding:10px 20px}
+
+/* Page display control */
+.page{display:none}
+.page.active{display:block}
+
+/* Inline tag */
+.required-tag{display:inline-block;font-size:10px;background:#fff0f3;color:#e94560;border-radius:4px;padding:1px 5px;margin-left:6px;font-weight:700;vertical-align:middle}
+
+/* 印刷用 */
+@media print{
+  .step-bar,.actions,.print-bar,.app-header .logo{display:none}
+  .app-header{background:#1a1a2e!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .card,.output-section{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="logo">明</div>
+  <div>
+    <h1>保護者カウンセリング 提案書 作成ツール</h1>
+    <p>明光義塾 長野エリア ／ 入力情報をもとに個別提案書を自動生成します</p>
+  </div>
+</div>
+
+<div class="step-bar">
+  <div class="step-item active" id="tab1" onclick="goStep(1)"><span class="step-num">1</span>基本情報</div>
+  <div class="step-item" id="tab2" onclick="goStep(2)"><span class="step-num">2</span>成績・テスト</div>
+  <div class="step-item" id="tab3" onclick="goStep(3)"><span class="step-num">3</span>授業報告</div>
+  <div class="step-item" id="tab4" onclick="goStep(4)"><span class="step-num">4</span>志望・現状</div>
+  <div class="step-item" id="tab5" onclick="goStep(5)"><span class="step-num">5</span>提案書生成</div>
+</div>
+
+<div class="main">
+
+<!-- ===== STEP 1: 基本情報 ===== -->
+<div class="page active" id="page1">
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#fff0f3">👤</div>
+      <div><h2>生徒基本情報</h2><p>氏名・学年・通塾状況を入力してください</p></div>
+    </div>
+    <div class="card-body">
+      <div class="row2">
+        <div class="form-group">
+          <label>氏名（生徒）<span class="required-tag">必須</span></label>
+          <input type="text" id="name" placeholder="例：海沼 瑞香">
+        </div>
+        <div class="form-group">
+          <label>学年<span class="required-tag">必須</span></label>
+          <select id="grade">
+            <option value="">選択</option>
+            <option value="中1">中学1年</option>
+            <option value="中2">中学2年</option>
+            <option value="中3">中学3年</option>
+          </select>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="form-group">
+          <label>校舎</label>
+          <select id="school">
+            <option value="安茂里駅前">安茂里駅前校</option>
+            <option value="屋代">屋代校</option>
+            <option value="長野青木島">長野青木島校</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>中学校名（任意）</label>
+          <input type="text" id="jhs" placeholder="例：長野市立○○中学校">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#fff0f3">📚</div>
+      <div><h2>現在の通塾状況</h2></div>
+    </div>
+    <div class="card-body">
+      <div class="form-group">
+        <label>現在通塾中の科目<span class="required-tag">必須</span></label>
+        <div class="subject-grid" id="currentSubjects">
+          <label class="subject-chip" onclick="toggleChip(this,'cur')"><input type="checkbox" value="英語">英語</label>
+          <label class="subject-chip" onclick="toggleChip(this,'cur')"><input type="checkbox" value="数学">数学</label>
+          <label class="subject-chip" onclick="toggleChip(this,'cur')"><input type="checkbox" value="国語">国語</label>
+          <label class="subject-chip" onclick="toggleChip(this,'cur')"><input type="checkbox" value="理科">理科</label>
+          <label class="subject-chip" onclick="toggleChip(this,'cur')"><input type="checkbox" value="社会">社会</label>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="form-group">
+          <label>週の通塾回数</label>
+          <select id="weeksPerMonth">
+            <option value="1">週1回</option>
+            <option value="2">週2回</option>
+            <option value="3">週3回</option>
+            <option value="4">週4回以上</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>1回あたりのコマ数</label>
+          <select id="comaPerVisit">
+            <option value="1">1コマ</option>
+            <option value="2">2コマ</option>
+            <option value="3">3コマ</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>部活の状況</label>
+        <select id="club">
+          <option value="引退済み">引退済み</option>
+          <option value="6月引退予定">6月引退予定</option>
+          <option value="7月引退予定">7月引退予定</option>
+          <option value="8月以降も継続">8月以降も継続</option>
+          <option value="部活なし">部活なし</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>保護者の関心・ご希望（任意）</label>
+        <textarea id="parentConcern" rows="2" placeholder="例：本人のやる気が心配、英語を重点的に伸ばしたい、など"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions" style="justify-content:flex-end">
+    <button class="btn btn-primary btn-lg" onclick="goStep(2)">次へ：成績入力 →</button>
+  </div>
+</div>
+
+<!-- ===== STEP 2: 成績・テスト ===== -->
+<div class="page" id="page2">
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#f0f6ff">📊</div>
+      <div><h2>直近の定期テスト（学校の成績）</h2><p>各教科100点満点でご入力ください</p></div>
+    </div>
+    <div class="card-body">
+      <label style="margin-bottom:10px">テスト名・時期（任意）<span class="hint" style="display:inline;margin-left:6px">例：2学期中間テスト</span></label>
+      <input type="text" id="testName1" placeholder="1学期期末テスト" style="margin-bottom:14px">
+      <div class="score-grid">
+        <div class="score-item"><label>英語</label><input type="number" id="s1_eng" min="0" max="100" placeholder="—" oninput="calcTotal('s1')"></div>
+        <div class="score-item"><label>数学</label><input type="number" id="s1_mat" min="0" max="100" placeholder="—" oninput="calcTotal('s1')"></div>
+        <div class="score-item"><label>国語</label><input type="number" id="s1_jpn" min="0" max="100" placeholder="—" oninput="calcTotal('s1')"></div>
+        <div class="score-item"><label>理科</label><input type="number" id="s1_sci" min="0" max="100" placeholder="—" oninput="calcTotal('s1')"></div>
+        <div class="score-item"><label>社会</label><input type="number" id="s1_soc" min="0" max="100" placeholder="—" oninput="calcTotal('s1')"></div>
+      </div>
+      <div class="score-total">
+        <span>5科目合計</span>
+        <strong id="s1_total">— 点</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#f0f6ff">📊</div>
+      <div><h2>直近の定期テスト（2回目・任意）</h2></div>
+    </div>
+    <div class="card-body">
+      <input type="text" id="testName2" placeholder="2学期中間テスト" style="margin-bottom:14px">
+      <div class="score-grid">
+        <div class="score-item"><label>英語</label><input type="number" id="s2_eng" min="0" max="100" placeholder="—" oninput="calcTotal('s2')"></div>
+        <div class="score-item"><label>数学</label><input type="number" id="s2_mat" min="0" max="100" placeholder="—" oninput="calcTotal('s2')"></div>
+        <div class="score-item"><label>国語</label><input type="number" id="s2_jpn" min="0" max="100" placeholder="—" oninput="calcTotal('s2')"></div>
+        <div class="score-item"><label>理科</label><input type="number" id="s2_sci" min="0" max="100" placeholder="—" oninput="calcTotal('s2')"></div>
+        <div class="score-item"><label>社会</label><input type="number" id="s2_soc" min="0" max="100" placeholder="—" oninput="calcTotal('s2')"></div>
+      </div>
+      <div class="score-total">
+        <span>5科目合計</span>
+        <strong id="s2_total">— 点</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#f3fcfa">📈</div>
+      <div><h2>総合テスト（模試）の結果（任意）</h2><p>中3の総合テスト：5科目各100点・平均240点前後</p></div>
+    </div>
+    <div class="card-body">
+      <input type="text" id="testName3" placeholder="例：5月総合テスト" style="margin-bottom:14px">
+      <div class="score-grid">
+        <div class="score-item"><label>英語</label><input type="number" id="s3_eng" min="0" max="100" placeholder="—" oninput="calcTotal('s3')"></div>
+        <div class="score-item"><label>数学</label><input type="number" id="s3_mat" min="0" max="100" placeholder="—" oninput="calcTotal('s3')"></div>
+        <div class="score-item"><label>国語</label><input type="number" id="s3_jpn" min="0" max="100" placeholder="—" oninput="calcTotal('s3')"></div>
+        <div class="score-item"><label>理科</label><input type="number" id="s3_sci" min="0" max="100" placeholder="—" oninput="calcTotal('s3')"></div>
+        <div class="score-item"><label>社会</label><input type="number" id="s3_soc" min="0" max="100" placeholder="—" oninput="calcTotal('s3')"></div>
+      </div>
+      <div class="score-total">
+        <span>5科目合計</span>
+        <strong id="s3_total">— 点</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#fffbf5">🏫</div>
+      <div><h2>内申点（中3）</h2><p>9教科5段階、最大45点</p></div>
+    </div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:10px">
+        <div class="score-item"><label>国語</label><input type="number" id="n_jpn" min="1" max="5" placeholder="—" oninput="calcNaishin()"></div>
+        <div class="score-item"><label>社会</label><input type="number" id="n_soc" min="1" max="5" placeholder="—" oninput="calcNaishin()"></div>
+        <div class="score-item"><label>数学</label><input type="number" id="n_mat" min="1" max="5" placeholder="—" oninput="calcNaishin()"></div>
+        <div class="score-item"><label>理科</label><input type="number" id="n_sci" min="1" max="5" placeholder="—" oninput="calcNaishin()"></div>
+        <div class="score-item"><label>英語</label><input type="number" id="n_eng" min="1" max="5" placeholder="—" oninput="calcNaishin()"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+        <div class="score-item"><label>音楽</label><input type="number" id="n_mus" min="1" max="5" placeholder="—" oninput="calcNaishin()"></div>
+        <div class="score-item"><label>美術</label><input type="number" id="n_art" min="1" max="5" placeholder="—" oninput="calcNaishin()"></div>
+        <div class="score-item"><label>技家</label><input type="number" id="n_tec" min="1" max="5" placeholder="—" oninput="calcNaishin()"></div>
+        <div class="score-item"><label>体育</label><input type="number" id="n_pe" min="1" max="5" placeholder="—" oninput="calcNaishin()"></div>
+      </div>
+      <div class="score-total" style="margin-top:14px">
+        <span>内申合計（45点満点）</span>
+        <strong id="naishin_total">— 点</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-secondary" onclick="goStep(1)">← 戻る</button>
+    <button class="btn btn-primary" onclick="goStep(3)" style="margin-left:auto">次へ：授業報告 →</button>
+  </div>
+</div>
+
+<!-- ===== STEP 3: 授業報告 ===== -->
+<div class="page" id="page3">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#f3fcfa">📋</div>
+      <div><h2>授業報告の貼り付け</h2><p>明光の授業報告テキストをそのまま貼り付けてください</p></div>
+    </div>
+    <div class="card-body">
+      <div class="form-group">
+        <label>授業報告テキスト（複数回分まとめてOK）</label>
+        <textarea id="reportText" rows="14" placeholder="▶ 2026-05-13　英語　担当：〇〇&#10;─────────────&#10;📋【授業方針】...&#10;&#10;▶ 2026-05-19　数学　担当：△△&#10;..."></textarea>
+        <p class="hint">Notionや報告システムからコピーして貼り付けてください。複数教科・複数回分OK</p>
+      </div>
+      <div class="form-group">
+        <label>特に講師から強調されていること・気になるポイント（任意）</label>
+        <textarea id="teacherMemo" rows="3" placeholder="例：ケアレスミスが課題、現在完了形の定着がもう一歩、など"></textarea>
+      </div>
+      <div class="row2">
+        <div class="form-group">
+          <label>得意だと感じる教科</label>
+          <div class="subject-grid" id="strongSubjects">
+            <label class="subject-chip" onclick="toggleChip(this,'str')"><input type="checkbox" value="英語">英語</label>
+            <label class="subject-chip" onclick="toggleChip(this,'str')"><input type="checkbox" value="数学">数学</label>
+            <label class="subject-chip" onclick="toggleChip(this,'str')"><input type="checkbox" value="国語">国語</label>
+            <label class="subject-chip" onclick="toggleChip(this,'str')"><input type="checkbox" value="理科">理科</label>
+            <label class="subject-chip" onclick="toggleChip(this,'str')"><input type="checkbox" value="社会">社会</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>苦手・課題のある教科</label>
+          <div class="subject-grid" id="weakSubjects">
+            <label class="subject-chip" onclick="toggleChip(this,'wk')"><input type="checkbox" value="英語">英語</label>
+            <label class="subject-chip" onclick="toggleChip(this,'wk')"><input type="checkbox" value="数学">数学</label>
+            <label class="subject-chip" onclick="toggleChip(this,'wk')"><input type="checkbox" value="国語">国語</label>
+            <label class="subject-chip" onclick="toggleChip(this,'wk')"><input type="checkbox" value="理科">理科</label>
+            <label class="subject-chip" onclick="toggleChip(this,'wk')"><input type="checkbox" value="社会">社会</label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-secondary" onclick="goStep(2)">← 戻る</button>
+    <button class="btn btn-primary" onclick="goStep(4)" style="margin-left:auto">次へ：志望校 →</button>
+  </div>
+</div>
+
+<!-- ===== STEP 4: 志望校・方針 ===== -->
+<div class="page" id="page4">
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#fff0f3">🏆</div>
+      <div><h2>志望校</h2><p>最大3校まで入力できます</p></div>
+    </div>
+    <div class="card-body">
+      <div id="aspirationList">
+        <div class="aspiration-row form-group">
+          <div><label>第1志望</label><input type="text" id="asp1" list="schoolList" placeholder="例：屋代高校"></div>
+          <div><label>優先度</label>
+            <select id="asp1pri"><option value="第1志望">第1志望</option><option value="確実圏">確実圏</option><option value="チャレンジ">チャレンジ</option></select>
+          </div>
+        </div>
+        <div class="aspiration-row form-group">
+          <div><label>第2志望</label><input type="text" id="asp2" list="schoolList" placeholder="例：長野吉田高校"></div>
+          <div><label>優先度</label>
+            <select id="asp2pri"><option value="第2志望">第2志望</option><option value="確実圏">確実圏</option><option value="チャレンジ">チャレンジ</option></select>
+          </div>
+        </div>
+        <div class="aspiration-row form-group">
+          <div><label>第3志望（任意）</label><input type="text" id="asp3" list="schoolList" placeholder="例：篠ノ井高校"></div>
+          <div><label>優先度</label>
+            <select id="asp3pri"><option value="第3志望">第3志望</option><option value="確実圏">確実圏</option><option value="チャレンジ">チャレンジ</option></select>
+          </div>
+        </div>
+      </div>
+      <datalist id="schoolList">
+        <option value="長野高校"><option value="屋代高校"><option value="長野吉田高校"><option value="長野西高校"><option value="篠ノ井高校">
+        <option value="長野東高校"><option value="市立長野高校"><option value="長野商業高校"><option value="長野南高校">
+        <option value="長野工業高校（電気電子情報）"><option value="長野工業高校（物質化学）"><option value="長野工業高校（建築）">
+        <option value="長野工業高校（機械）"><option value="長野工業高校（土木）"><option value="更級農業高校"><option value="屋代南高校">
+      </datalist>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#f0faf8">💬</div>
+      <div><h2>カウンセリングの重点・追加メモ</h2></div>
+    </div>
+    <div class="card-body">
+      <div class="form-group">
+        <label>生徒の学習意欲・状況</label>
+        <select id="motivation">
+          <option value="高い">意欲は高い</option>
+          <option value="普通" selected>普通（波がある）</option>
+          <option value="低い">やや低い・受け身気味</option>
+          <option value="不明">把握できていない</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>夏期講習への保護者の現時点のスタンス（把握している場合）</label>
+        <select id="summerStance">
+          <option value="積極的">積極的に参加させたい</option>
+          <option value="検討中" selected>まだ検討中</option>
+          <option value="少なめ">少ない回数だけ考えている</option>
+          <option value="未定">未定・特に考えていない</option>
+          <option value="不参加">あまり参加させたくない</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>教室長からの追加コメント・特記事項（任意）</label>
+        <textarea id="directorNote" rows="3" placeholder="カウンセリングで特に伝えたいこと、保護者の特別な事情など"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-secondary" onclick="goStep(3)">← 戻る</button>
+    <button class="btn btn-primary btn-lg" onclick="generateProposal()" style="margin-left:auto">✨ 提案書を生成する</button>
+  </div>
+</div>
+
+<!-- ===== STEP 5: 提案書 ===== -->
+<div class="page" id="page5">
+  <div id="loadingArea" class="loading">
+    <div class="spinner"></div>
+    <p id="loadingMsg">入力情報を分析中です...</p>
+  </div>
+  <div id="outputArea" style="display:none"></div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+const BORDER_SCORES = {
+  '長野高校':400,'屋代高校':380,'長野吉田高校':350,'長野西高校':320,
+  '篠ノ井高校':300,'長野東高校':250,'市立長野高校':280,'長野商業高校':250,
+  '長野南高校':220,'長野工業高校（電気電子情報）':300,'長野工業高校（物質化学）':250,
+  '長野工業高校（建築）':250,'長野工業高校（機械）':240,'長野工業高校（土木）':200,
+  '更級農業高校':170,'屋代南高校':170
+};
+
+let currentStep = 1;
+
+function goStep(n){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page'+n).classList.add('active');
+  document.querySelectorAll('.step-item').forEach((t,i)=>{
+    t.classList.remove('active','done');
+    if(i+1===n) t.classList.add('active');
+    else if(i+1<n) t.classList.add('done');
+  });
+  currentStep=n;
+  window.scrollTo(0,0);
+}
+
+function toggleChip(el,grp){
+  el.classList.toggle('checked');
+  el.querySelector('input').checked=el.classList.contains('checked');
+}
+
+function getChecked(containerId){
+  return [...document.querySelectorAll('#'+containerId+' .subject-chip.checked')].map(c=>c.querySelector('input').value);
+}
+
+function calcTotal(prefix){
+  const ids=[`${prefix}_eng`,`${prefix}_mat`,`${prefix}_jpn`,`${prefix}_sci`,`${prefix}_soc`];
+  let sum=0,count=0;
+  ids.forEach(id=>{const v=document.getElementById(id).value;if(v!==''){sum+=parseInt(v)||0;count++;}});
+  document.getElementById(`${prefix}_total`).textContent=count>0?`${sum} 点`:'— 点';
+}
+
+function calcNaishin(){
+  const ids=['n_jpn','n_soc','n_mat','n_sci','n_eng','n_mus','n_art','n_tec','n_pe'];
+  let sum=0,count=0;
+  ids.forEach(id=>{const v=document.getElementById(id).value;if(v!==''){sum+=parseInt(v)||0;count++;}});
+  document.getElementById('naishin_total').textContent=count>0?`${sum} 点`:'— 点';
+}
+
+function getScores(prefix){
+  const keys=['eng','mat','jpn','sci','soc'];
+  const labels=['英語','数学','国語','理科','社会'];
+  const result={};
+  keys.forEach((k,i)=>{const v=document.getElementById(`${prefix}_${k}`).value;if(v!=='')result[labels[i]]=parseInt(v);});
+  return result;
+}
+
+function getNaishin(){
+  const map={n_jpn:'国語',n_soc:'社会',n_mat:'数学',n_sci:'理科',n_eng:'英語',n_mus:'音楽',n_art:'美術',n_tec:'技家',n_pe:'体育'};
+  const result={};
+  for(const[id,label] of Object.entries(map)){const v=document.getElementById(id).value;if(v!=='')result[label]=parseInt(v);}
+  return result;
+}
+
+function sumObj(obj){return Object.values(obj).reduce((a,b)=>a+b,0);}
+
+function findWeakSubjects(scores){
+  if(!scores||Object.keys(scores).length===0) return [];
+  const avg=sumObj(scores)/Object.keys(scores).length;
+  return Object.entries(scores).filter(([k,v])=>v<avg-5).map(([k])=>k);
+}
+
+async function generateProposal(){
+  goStep(5);
+  document.getElementById('loadingArea').style.display='block';
+  document.getElementById('outputArea').style.display='none';
+
+  const data = collectData();
+  const msgs = ['入力情報を整理しています...','志望校との差分を計算中...','夏期講習プランを作成中...','提案書を仕上げています...'];
+  let mi=0;
+  const timer=setInterval(()=>{if(mi<msgs.length){document.getElementById('loadingMsg').textContent=msgs[mi++];}},1800);
+
+  try{
+    const proposal = await callClaude(data);
+    clearInterval(timer);
+    document.getElementById('loadingArea').style.display='none';
+    const out=document.getElementById('outputArea');
+    out.style.display='block';
+    out.innerHTML=proposal;
+  }catch(e){
+    clearInterval(timer);
+    document.getElementById('loadingArea').innerHTML=`<p style="color:#e94560">エラーが発生しました：${e.message}</p><button class="btn btn-secondary" onclick="goStep(4)" style="margin-top:16px">← 戻る</button>`;
+  }
+}
+
+function collectData(){
+  const scores1=getScores('s1'), scores2=getScores('s2'), scores3=getScores('s3');
+  const naishin=getNaishin();
+  const naishTotal=sumObj(naishin);
+  const test1Total=sumObj(scores1), test2Total=sumObj(scores2), test3Total=sumObj(scores3);
+  return {
+    name: document.getElementById('name').value||'生徒',
+    grade: document.getElementById('grade').value||'中3',
+    school: document.getElementById('school').value,
+    jhs: document.getElementById('jhs').value,
+    currentSubjects: getChecked('currentSubjects'),
+    weeksPerMonth: document.getElementById('weeksPerMonth').value,
+    comaPerVisit: document.getElementById('comaPerVisit').value,
+    club: document.getElementById('club').value,
+    parentConcern: document.getElementById('parentConcern').value,
+    testName1: document.getElementById('testName1').value||'定期テスト①',
+    scores1, test1Total,
+    testName2: document.getElementById('testName2').value||'定期テスト②',
+    scores2, test2Total,
+    testName3: document.getElementById('testName3').value||'総合テスト',
+    scores3, test3Total,
+    naishin, naishTotal,
+    reportText: document.getElementById('reportText').value,
+    teacherMemo: document.getElementById('teacherMemo').value,
+    strongSubjects: getChecked('strongSubjects'),
+    weakSubjects: getChecked('weakSubjects'),
+    asp1: document.getElementById('asp1').value,
+    asp1pri: document.getElementById('asp1pri').value,
+    asp2: document.getElementById('asp2').value,
+    asp2pri: document.getElementById('asp2pri').value,
+    asp3: document.getElementById('asp3').value,
+    asp3pri: document.getElementById('asp3pri').value,
+    motivation: document.getElementById('motivation').value,
+    summerStance: document.getElementById('summerStance').value,
+    directorNote: document.getElementById('directorNote').value,
+    borderScores: BORDER_SCORES,
+  };
+}
+
+async function callClaude(data){
+  const subjectInfo = data.currentSubjects.length>0
+    ? `現在の通塾科目：${data.currentSubjects.join('・')}（週${data.weeksPerMonth}回・1回${data.comaPerVisit}コマ）`
+    : '通塾科目：未設定';
+
+  const scoreLines = [];
+  if(data.test1Total>0) scoreLines.push(`【${data.testName1}】${JSON.stringify(data.scores1)} 合計${data.test1Total}点`);
+  if(data.test2Total>0) scoreLines.push(`【${data.testName2}】${JSON.stringify(data.scores2)} 合計${data.test2Total}点`);
+  if(data.test3Total>0) scoreLines.push(`【${data.testName3}（総合テスト/模試）】${JSON.stringify(data.scores3)} 合計${data.test3Total}点`);
+  if(data.naishTotal>0) scoreLines.push(`内申点：${JSON.stringify(data.naishin)} 合計${data.naishTotal}/45点`);
+
+  const aspirations = [];
+  if(data.asp1) aspirations.push(`${data.asp1pri}：${data.asp1}（ボーダー目安：${data.borderScores[data.asp1]||'不明'}点）`);
+  if(data.asp2) aspirations.push(`${data.asp2pri}：${data.asp2}（ボーダー目安：${data.borderScores[data.asp2]||'不明'}点）`);
+  if(data.asp3) aspirations.push(`${data.asp3pri}：${data.asp3}（ボーダー目安：${data.borderScores[data.asp3]||'不明'}点）`);
+
+  const prompt = `あなたは長野県の学習塾「明光義塾」の教室長です。保護者カウンセリング用の提案書HTMLを生成してください。
+
+【生徒情報】
+氏名：${data.name}（${data.grade}）
+校舎：明光義塾${data.school}校
+所属中学校：${data.jhs||'不明'}
+部活：${data.club}
+
+【通塾状況】
+${subjectInfo}
+
+【成績】
+${scoreLines.join('\n')||'成績データなし'}
+
+【志望校】
+${aspirations.join('\n')||'未入力'}
+
+【授業報告（講師記録）】
+${data.reportText||'（なし）'}
+
+【講師・教室長メモ】
+${data.teacherMemo||'なし'}
+${data.directorNote||''}
+
+【得意科目】${data.strongSubjects.join('・')||'不明'}
+【苦手科目】${data.weakSubjects.join('・')||'不明（成績から判断）'}
+【学習意欲】${data.motivation}
+【夏期講習への保護者スタンス】${data.summerStance}
+【保護者の関心】${data.parentConcern||'不明'}
+
+【長野県公立高校入試情報】
+- 総合テスト500点満点（各科目100点）、平均240点前後
+- 内申点45点満点（中3の年間評定・9教科5段階）
+- 相関図方式（内申点×入試点数の散布図で合否判定。右上→合格、左下→不合格、左上・右下→総合判断）
+- 高校別ボーダー目安：長野400点、屋代380点、長野吉田350点、長野西320点、篠ノ井300点、市立長野280点、長野東・長野商業250点、長野南220点
+- 夏期講習：1コマ90分・4,125円（中3）、推奨1科目10コマ・3科目30コマが理想、夏休みは約4週間
+- 通塾：現在週${data.weeksPerMonth}回・${data.currentSubjects.join('+')||'未確認'}のみ
+
+【作成ルール】
+以下のHTML構造で、印刷可能な保護者向け提案書を生成してください。
+
+・インラインスタイルのみ使用（外部CSSなし）
+・日本語フォント想定（Hiragino Sans / Yu Gothic）
+・A4縦の印刷を想定した読みやすいレイアウト
+・以下のセクションを必ず含める：
+
+1. 【現在の学力分析】
+   - 各テストの点数から強み・弱みを分析
+   - 科目ごとに「得点力」「伸びしろ」を評価
+   - 内申と入試点数のバランス評価
+
+2. 【志望校合格に向けた目標点数】
+   - 志望校のボーダーと現在の得点の差分
+   - 「あと何点必要か」「どの科目で稼ぐか」を具体的に提示
+   - 相関図の説明も簡単に添える（右上目指そう、という表現で）
+
+3. 【この夏に頑張るべき科目・単元】
+   - 長野県入試の出題傾向も踏まえて
+   - 授業報告の内容から具体的な単元レベルで言及
+   - 「今夏に集中すべき優先順位」を明示
+
+4. 【夏期講習のご提案】
+   - 推奨科目と推奨コマ数（根拠付き）
+   - 費用感（1科目10コマ×4,125円=41,250円 の計算で）
+   - 「今やらないとどうなるか」の現実的な説明
+
+5. 【秋以降の通塾プラン（追加提案）】
+   - 現在の通塾科目が1科目の場合は2科目へ増加を提案
+   - 英語のみ→英語＋数学、数学のみ→数学＋英語、など具体的に
+   - 週2回・2科目にする理由を丁寧に説明
+
+6. 【保護者の方へのメッセージ】
+   - 生徒の良い点・成長を必ず最初に述べる
+   - 夏が分岐点であることを誠実に伝える
+   - 塾として全力でサポートするメッセージで締める
+
+デザイン要件：
+- ヘッダーに生徒名・作成日・校舎名
+- セクションは色分けされたブロックで区切る
+- 数字・ポイントは視覚的に目立つように
+- 提案内容はポジティブかつ具体的に（志望校を下げる提案は絶対にしない）
+- 全体で保護者が「なるほど、しっかりやらなければ」と感じる内容に
+- ページ下部に「ご不明な点は教室長まで」の一言
+
+HTMLのみ出力してください。\`\`\`htmlなどのコードブロックは不要です。`;
+
+  const res = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-6',
+      max_tokens:4000,
+      messages:[{role:'user',content:prompt}]
+    })
+  });
+  if(!res.ok) throw new Error(`API Error ${res.status}`);
+  const json=await res.json();
+  let html=json.content.map(b=>b.type==='text'?b.text:'').join('');
+  html=html.replace(/^```html?\n?/,'').replace(/\n?```$/,'');
+  return html;
+}
+</script>
+</body>
+</html>
