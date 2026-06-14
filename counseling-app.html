@@ -213,11 +213,11 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
       <div class="form-group">
         <label>現在通塾中の科目<span class="required-tag">必須</span></label>
         <div class="subject-grid" id="currentSubjects">
-          <label class="subject-chip" onclick="toggleChip(this,'cur')"><input type="checkbox" value="英語">英語</label>
-          <label class="subject-chip" onclick="toggleChip(this,'cur')"><input type="checkbox" value="数学">数学</label>
-          <label class="subject-chip" onclick="toggleChip(this,'cur')"><input type="checkbox" value="国語">国語</label>
-          <label class="subject-chip" onclick="toggleChip(this,'cur')"><input type="checkbox" value="理科">理科</label>
-          <label class="subject-chip" onclick="toggleChip(this,'cur')"><input type="checkbox" value="社会">社会</label>
+          <button type="button" class="subject-chip" onclick="toggleChip(this)" data-value="英語">英語</button>
+          <button type="button" class="subject-chip" onclick="toggleChip(this)" data-value="数学">数学</button>
+          <button type="button" class="subject-chip" onclick="toggleChip(this)" data-value="国語">国語</button>
+          <button type="button" class="subject-chip" onclick="toggleChip(this)" data-value="理科">理科</button>
+          <button type="button" class="subject-chip" onclick="toggleChip(this)" data-value="社会">社会</button>
         </div>
       </div>
       <div class="row2">
@@ -381,21 +381,21 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
         <div class="form-group">
           <label>得意だと感じる教科</label>
           <div class="subject-grid" id="strongSubjects">
-            <label class="subject-chip" onclick="toggleChip(this,'str')"><input type="checkbox" value="英語">英語</label>
-            <label class="subject-chip" onclick="toggleChip(this,'str')"><input type="checkbox" value="数学">数学</label>
-            <label class="subject-chip" onclick="toggleChip(this,'str')"><input type="checkbox" value="国語">国語</label>
-            <label class="subject-chip" onclick="toggleChip(this,'str')"><input type="checkbox" value="理科">理科</label>
-            <label class="subject-chip" onclick="toggleChip(this,'str')"><input type="checkbox" value="社会">社会</label>
+            <button type="button" class="subject-chip" onclick="toggleChip(this)" data-value="英語">英語</button>
+            <button type="button" class="subject-chip" onclick="toggleChip(this)" data-value="数学">数学</button>
+            <button type="button" class="subject-chip" onclick="toggleChip(this)" data-value="国語">国語</button>
+            <button type="button" class="subject-chip" onclick="toggleChip(this)" data-value="理科">理科</button>
+            <button type="button" class="subject-chip" onclick="toggleChip(this)" data-value="社会">社会</button>
           </div>
         </div>
         <div class="form-group">
           <label>苦手・課題のある教科</label>
           <div class="subject-grid" id="weakSubjects">
-            <label class="subject-chip" onclick="toggleChip(this,'wk')"><input type="checkbox" value="英語">英語</label>
-            <label class="subject-chip" onclick="toggleChip(this,'wk')"><input type="checkbox" value="数学">数学</label>
-            <label class="subject-chip" onclick="toggleChip(this,'wk')"><input type="checkbox" value="国語">国語</label>
-            <label class="subject-chip" onclick="toggleChip(this,'wk')"><input type="checkbox" value="理科">理科</label>
-            <label class="subject-chip" onclick="toggleChip(this,'wk')"><input type="checkbox" value="社会">社会</label>
+            <button type="button" class="subject-chip" onclick="toggleChip(this)" data-value="英語">英語</button>
+            <button type="button" class="subject-chip" onclick="toggleChip(this)" data-value="数学">数学</button>
+            <button type="button" class="subject-chip" onclick="toggleChip(this)" data-value="国語">国語</button>
+            <button type="button" class="subject-chip" onclick="toggleChip(this)" data-value="理科">理科</button>
+            <button type="button" class="subject-chip" onclick="toggleChip(this)" data-value="社会">社会</button>
           </div>
         </div>
       </div>
@@ -518,13 +518,12 @@ function goStep(n){
   window.scrollTo(0,0);
 }
 
-function toggleChip(el,grp){
+function toggleChip(el){
   el.classList.toggle('checked');
-  el.querySelector('input').checked=el.classList.contains('checked');
 }
 
 function getChecked(containerId){
-  return [...document.querySelectorAll('#'+containerId+' .subject-chip.checked')].map(c=>c.querySelector('input').value);
+  return [...document.querySelectorAll('#'+containerId+' .subject-chip.checked')].map(c=>c.dataset.value);
 }
 
 function calcTotal(prefix){
