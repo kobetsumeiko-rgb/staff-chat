@@ -57,20 +57,39 @@ select{padding:8px 12px;border:1px solid #ddd;border-radius:8px;background:#fff;
 .cal-dot{width:5px;height:5px;border-radius:50%;background:#888;flex-shrink:0}
 .cal-day.selected .cal-dot{background:#ccc}
 .slot-wrap{margin-top:1rem;background:#fff;border:1px solid #e8e6e0;border-radius:12px;padding:1rem 1.25rem}
-.slot-wrap-title{font-size:14px;font-weight:700;margin-bottom:10px}
-.slots{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
-.slot{padding:7px 16px;border-radius:99px;border:1.5px solid #ddd;font-size:13px;cursor:pointer;color:#1a1a1a;background:#fff;font-family:inherit;transition:background .1s}
-.slot:hover:not([disabled]){background:#f0efeb}
-.slot.sel{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
-.slot.st-pending{background:#FAEEDA;border-color:#EF9F27;color:#633806}
-.slot.st-accepted{background:#EAF3DE;border-color:#639922;color:#1a3a08}
-.slot.st-rejected{background:#FCEBEB;border-color:#E24B4A;color:#500}
-.slot.st-ab-pending{background:#FBEAF0;border-color:#D4537E;color:#4B1528}
-.slot.st-ab-accepted{background:#EAF3DE;border-color:#639922;color:#1a3a08}
-.legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.slot-wrap-title{font-size:14px;font-weight:700;margin-bottom:12px}
+
+/* 時間帯＋勤務地の行 */
+.slot-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0efeb}
+.slot-row:last-of-type{border-bottom:none}
+.slot-time{font-size:13px;min-width:120px;color:#1a1a1a}
+.slot-time.disabled{color:#bbb}
+.loc-btns{display:flex;gap:6px;flex-wrap:wrap}
+.loc-btn{padding:5px 12px;border-radius:99px;border:1.5px solid #ddd;font-size:12px;cursor:pointer;background:#fff;font-family:inherit;color:#555;transition:background .1s,border-color .1s}
+.loc-btn:hover:not(.locked){background:#f0efeb}
+.loc-btn.sel{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
+.loc-btn.locked{cursor:default;opacity:.7}
+
+/* ステータス色 */
+.slot-row.st-pending .slot-time{color:#633806}
+.slot-row.st-pending .loc-btn.sel{background:#EF9F27;border-color:#EF9F27;color:#fff}
+.slot-row.st-accepted .slot-time{color:#1a3a08}
+.slot-row.st-accepted .loc-btn.sel{background:#639922;border-color:#639922;color:#fff}
+.slot-row.st-rejected .slot-time{color:#aaa;text-decoration:line-through}
+.slot-row.st-rejected .loc-btn.sel{background:#ddd;border-color:#ddd;color:#888}
+
+/* ステータスバッジ（行末） */
+.slot-status{font-size:11px;padding:3px 9px;border-radius:99px;white-space:nowrap;margin-left:auto}
+.ss-pending{background:#FAEEDA;color:#633806}
+.ss-accepted{background:#EAF3DE;color:#1a3a08}
+.ss-rejected{background:#FCEBEB;color:#500}
+.ss-ab-pending{background:#FBEAF0;color:#4B1528}
+.ss-ab-accepted{background:#EAF3DE;color:#1a3a08}
+
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
 .leg{display:flex;align-items:center;gap:5px;font-size:11px;color:#888}
 .leg-dot{width:9px;height:9px;border-radius:50%}
-.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;border:1.5px solid #ddd;background:#fff;font-size:13px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;color:#1a1a1a;transition:background .1s;font-weight:500}
 .btn:hover{background:#f0efeb}
 .btn.primary{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
@@ -83,26 +102,34 @@ select{padding:8px 12px;border:1px solid #ddd;border-radius:8px;background:#fff;
 .req-item{background:#fff;border:1px solid #e8e6e0;border-radius:12px;padding:12px 14px}
 .ri-top{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
 .ri-label{font-size:14px;font-weight:500;flex:1}
+.ri-loc{font-size:12px;color:#555;background:#f0efeb;padding:2px 8px;border-radius:99px}
 .badge{font-size:11px;padding:3px 10px;border-radius:99px;font-weight:500}
 .badge.pending{background:#FAEEDA;color:#633806}
 .badge.accepted{background:#EAF3DE;color:#1a3a08}
 .badge.rejected{background:#FCEBEB;color:#500}
 .badge.ab-pending{background:#FBEAF0;color:#4B1528}
 .sch-list{display:flex;flex-direction:column}
-.sch-item{display:flex;align-items:center;gap:10px;padding:11px 14px;background:#fff;border-bottom:1px solid #f0efeb}
+.sch-item{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#fff;border-bottom:1px solid #f0efeb;flex-wrap:wrap}
 .sch-item:first-child{border-radius:12px 12px 0 0}
 .sch-item:last-child{border-radius:0 0 12px 12px;border-bottom:none}
-.sch-date{font-size:13px;font-weight:700;min-width:90px}
-.sch-name{font-size:13px;color:#555;flex:1}
-.sch-time{font-size:13px;color:#777;min-width:120px}
+.sch-date{font-size:13px;font-weight:700;min-width:80px}
+.sch-name{font-size:13px;color:#555;min-width:80px}
+.sch-time{font-size:12px;color:#777;flex:1}
+.sch-loc{font-size:12px;background:#f0efeb;padding:2px 8px;border-radius:99px;color:#444}
 .sch-badge{font-size:11px;padding:2px 9px;border-radius:99px}
 .sb-work{background:#EAF3DE;color:#1a3a08}
 .sb-abs{background:#FBEAF0;color:#4B1528}
 .empty{text-align:center;padding:2.5rem;color:#aaa;font-size:14px}
-.loading{text-align:center;padding:2rem;color:#aaa;font-size:13px}
 .toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:100;white-space:nowrap}
 .toast.show{opacity:1}
 .sync-indicator{font-size:11px;color:#aaa;text-align:right;padding:.25rem 1.25rem 0}
+
+/* 欠勤用スロット（シンプル） */
+.abs-slots{display:flex;flex-direction:column;gap:0}
+.abs-slot-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0efeb}
+.abs-slot-row:last-child{border-bottom:none}
+.abs-slot-time{font-size:13px;flex:1}
+.abs-chk{width:18px;height:18px;cursor:pointer;accent-color:#1a1a1a}
 </style>
 </head>
 <body>
@@ -166,7 +193,7 @@ select{padding:8px 12px;border:1px solid #ddd;border-radius:8px;background:#fff;
           <div class="leg"><div class="leg-dot" style="background:#639922"></div>承諾済み</div>
           <div class="leg"><div class="leg-dot" style="background:#E24B4A"></div>拒否済み</div>
         </div>
-        <div class="slots" id="jslots"></div>
+        <div id="jslots"></div>
         <div class="btn-row">
           <button class="btn primary" onclick="sendRequest()"><i class="ti ti-send"></i> 依頼を送る</button>
         </div>
@@ -216,7 +243,7 @@ select{padding:8px 12px;border:1px solid #ddd;border-radius:8px;background:#fff;
           <div class="leg"><div class="leg-dot" style="background:#D4537E"></div>申請中</div>
           <div class="leg"><div class="leg-dot" style="background:#639922"></div>承認済み</div>
         </div>
-        <div class="slots" id="tabs-slots"></div>
+        <div class="abs-slots" id="tabs-slots"></div>
         <div class="btn-row">
           <button class="btn danger" onclick="sendAbsence()"><i class="ti ti-calendar-off"></i> 欠勤申請を送る</button>
         </div>
@@ -233,7 +260,6 @@ select{padding:8px 12px;border:1px solid #ddd;border-radius:8px;background:#fff;
 
 <script>
 const API = 'https://shift-api.kobetsu-meiko.workers.dev';
-
 const TUTORS = [
   { id: 'asamura',    name: '浅村結良' },
   { id: 'koyama',     name: '小山陽樹' },
@@ -243,89 +269,67 @@ const TUTORS = [
   { id: 'midorikawa', name: '緑川智洸' },
 ];
 const SLOTS = ['9:00〜10:30','10:40〜12:10','13:10〜14:40','14:50〜16:20','16:30〜18:00','18:10〜19:40','19:50〜21:20'];
+const LOCS  = ['屋代','安茂里','青木島'];
 
+// requests[date][tutor][slot] = { status:'pending'|'accepted'|'rejected', location:'屋代'|'安茂里'|'青木島' }
+// absences[date][tutor][slot] = 'absence-pending'|'absence-accepted'
 let requests = {}, absences = {};
 let role = null, currentTutor = null;
 let cY, cM, cY2, cM2;
 let jDate = null, tDate = null;
-let jSel = new Set(), tSel = new Set();
+// jSel[slot] = location|null
+let jSel = {};
+let tSel = new Set();
 
 function dk(y,m,d){ return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}` }
 function fd(k){ const[,m,d]=k.split('-'); return `${parseInt(m)}月${parseInt(d)}日` }
 function gs(id){ return document.getElementById(id) }
 function show(id,v=true){ gs(id).classList.toggle('active',v) }
-
-function toast(msg){
-  const t=gs('toast'); t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2200);
-}
-
-function setSyncLabel(id, msg){ const el=gs(id); if(el) el.textContent=msg; }
+function toast(msg){ const t=gs('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200) }
+function setSyncLabel(id,msg){ const el=gs(id); if(el) el.textContent=msg }
 
 // ===== API =====
 async function loadData(){
-  try {
-    const res = await fetch(`${API}/data`);
-    const data = await res.json();
-    requests = data.requests || {};
-    absences = data.absences || {};
-  } catch(e) {
-    toast('通信エラー：データを取得できませんでした');
-  }
+  try{
+    const res=await fetch(`${API}/data`);
+    const data=await res.json();
+    requests=data.requests||{};
+    absences=data.absences||{};
+  }catch(e){ toast('通信エラー：データを取得できませんでした') }
 }
-
 async function saveRequests(){
-  try {
-    await fetch(`${API}/data`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ requests })
-    });
-  } catch(e) {
-    toast('通信エラー：保存できませんでした');
-  }
+  try{ await fetch(`${API}/data`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({requests})}) }
+  catch(e){ toast('通信エラー：保存できませんでした') }
 }
-
 async function saveAbsences(){
-  try {
-    await fetch(`${API}/data`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ absences })
-    });
-  } catch(e) {
-    toast('通信エラー：保存できませんでした');
-  }
+  try{ await fetch(`${API}/data`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({absences})}) }
+  catch(e){ toast('通信エラー：保存できませんでした') }
 }
 
-// ===== 起動時URLチェック =====
+// ===== 起動時 =====
 window.addEventListener('DOMContentLoaded', async ()=>{
-  const params = new URLSearchParams(location.search);
-  const tid = params.get('tutor');
-  if(tid){
-    const found = TUTORS.find(t=>t.id===tid);
-    if(found){ await autoLoginTutor(found); return; }
-  }
+  const params=new URLSearchParams(location.search);
+  const tid=params.get('tutor');
+  if(tid){ const found=TUTORS.find(t=>t.id===tid); if(found){ await autoLoginTutor(found); return } }
 });
 
 async function autoLoginTutor(tutor){
-  currentTutor = tutor.name;
-  gs('tutor-hdr-name').textContent = tutor.name;
+  currentTutor=tutor.name;
+  gs('tutor-hdr-name').textContent=tutor.name;
   const n=new Date(); cY2=n.getFullYear(); cM2=n.getMonth();
   setSyncLabel('tutor-sync','読み込み中...');
   await loadData();
   setSyncLabel('tutor-sync','');
   renderCal2(); renderTReqs(); renderTSch();
-  show('screen-role',false);
-  show('screen-tutor');
+  show('screen-role',false); show('screen-tutor');
 }
 
 // ===== ロール選択 =====
 async function setRole(r){
-  role = r;
-  const sel = gs('juku-tutor');
-  sel.innerHTML = '<option value="">選択してください</option>';
-  TUTORS.forEach(t=>{ const o=document.createElement('option'); o.value=t.name; o.textContent=t.name; sel.appendChild(o); });
+  role=r;
+  const sel=gs('juku-tutor');
+  sel.innerHTML='<option value="">選択してください</option>';
+  TUTORS.forEach(t=>{ const o=document.createElement('option'); o.value=t.name; o.textContent=t.name; sel.appendChild(o) });
   const n=new Date(); cY=n.getFullYear(); cM=n.getMonth();
   setSyncLabel('juku-sync','読み込み中...');
   await loadData();
@@ -335,24 +339,18 @@ async function setRole(r){
 }
 
 function showTutorLinks(){
-  const sec = gs('tutor-links-section');
-  const list = gs('tutor-link-list');
-  list.innerHTML = '';
-  const base = location.origin + location.pathname;
+  const sec=gs('tutor-links-section'); const list=gs('tutor-link-list'); list.innerHTML='';
+  const base=location.origin+location.pathname;
   TUTORS.forEach(t=>{
-    const url = `${base}?tutor=${t.id}`;
-    const item = document.createElement('div'); item.className='tutor-link-item';
-    item.innerHTML=`
-      <span class="tl-name">${t.name}</span>
-      <span class="tl-url">${url}</span>
-      <button class="copy-btn" onclick="copyUrl('${url}',this)"><i class="ti ti-copy" style="font-size:12px"></i> コピー</button>
-    `;
+    const url=`${base}?tutor=${t.id}`;
+    const item=document.createElement('div'); item.className='tutor-link-item';
+    item.innerHTML=`<span class="tl-name">${t.name}</span><span class="tl-url">${url}</span><button class="copy-btn" onclick="copyUrl('${url}',this)"><i class="ti ti-copy" style="font-size:12px"></i> コピー</button>`;
     list.appendChild(item);
   });
   sec.style.display='block';
 }
 
-function copyUrl(url, btn){
+function copyUrl(url,btn){
   navigator.clipboard.writeText(url).then(()=>{
     btn.innerHTML='<i class="ti ti-check" style="font-size:12px"></i> コピー済み';
     setTimeout(()=>btn.innerHTML='<i class="ti ti-copy" style="font-size:12px"></i> コピー',2000);
@@ -360,36 +358,20 @@ function copyUrl(url, btn){
   });
 }
 
-function goRole(){
-  show('screen-juku',false); show('screen-tutor',false);
-  gs('tutor-links-section').style.display='none';
-  show('screen-role');
-}
+function goRole(){ show('screen-juku',false); show('screen-tutor',false); gs('tutor-links-section').style.display='none'; show('screen-role') }
 
 // ===== 塾側タブ =====
 function jSwitch(tab){
-  ['request','absence','schedule'].forEach(t=>{
-    gs('jtab-'+t).classList.toggle('active',t===tab);
-    gs('jpane-'+t).classList.toggle('active',t===tab);
-  });
+  ['request','absence','schedule'].forEach(t=>{ gs('jtab-'+t).classList.toggle('active',t===tab); gs('jpane-'+t).classList.toggle('active',t===tab) });
   if(tab==='absence') loadAndRender(renderJAbs,'juku-sync');
   if(tab==='schedule') loadAndRender(renderJSch,'juku-sync');
 }
 function tSwitch(tab){
-  ['requests','absence','schedule'].forEach(t=>{
-    gs('ttab-'+t).classList.toggle('active',t===tab);
-    gs('tpane-'+t).classList.toggle('active',t===tab);
-  });
+  ['requests','absence','schedule'].forEach(t=>{ gs('ttab-'+t).classList.toggle('active',t===tab); gs('tpane-'+t).classList.toggle('active',t===tab) });
   if(tab==='requests') loadAndRender(renderTReqs,'tutor-sync');
   if(tab==='schedule') loadAndRender(renderTSch,'tutor-sync');
 }
-
-async function loadAndRender(fn, syncId){
-  setSyncLabel(syncId,'更新中...');
-  await loadData();
-  setSyncLabel(syncId,'');
-  fn();
-}
+async function loadAndRender(fn,syncId){ setSyncLabel(syncId,'更新中...'); await loadData(); setSyncLabel(syncId,''); fn() }
 
 // ===== カレンダー1（塾側） =====
 function cm(d){ cM+=d; if(cM>11){cM=0;cY++} if(cM<0){cM=11;cY--} renderCal() }
@@ -411,7 +393,9 @@ function renderCal(){
     g.appendChild(e);
   }
 }
-function selJDate(k){ jDate=k; jSel.clear(); renderCal(); renderJukuSlots() }
+
+function selJDate(k){ jDate=k; jSel={}; renderCal(); renderJukuSlots() }
+
 function renderJukuSlots(){
   const tutor=gs('juku-tutor').value;
   const wrap=gs('jslot-wrap');
@@ -419,26 +403,61 @@ function renderJukuSlots(){
   wrap.style.display='block';
   gs('jslot-title').textContent=`${fd(jDate)}　${tutor} 講師`;
   const c=gs('jslots'); c.innerHTML='';
+
   SLOTS.forEach(s=>{
-    const status=requests[jDate]?.[tutor]?.[s]||null;
-    const b=document.createElement('button'); b.className='slot';
-    if(status==='pending'){b.classList.add('st-pending');b.textContent=s+' (依頼中)'}
-    else if(status==='accepted'){b.classList.add('st-accepted');b.textContent=s+' ✓ 承諾'}
-    else if(status==='rejected'){b.classList.add('st-rejected');b.textContent=s+' ✕ 拒否'}
-    else{ if(jSel.has(s)) b.classList.add('sel'); b.textContent=s }
-    b.onclick=()=>{ if(!status){ jSel.has(s)?jSel.delete(s):jSel.add(s); renderJukuSlots() } };
-    c.appendChild(b);
+    const entry=requests[jDate]?.[tutor]?.[s]||null;
+    const status=entry?.status||null;
+    const lockedLoc=entry?.location||null;
+
+    const row=document.createElement('div');
+    row.className='slot-row'+(status?' st-'+status:'');
+
+    const timeEl=document.createElement('span');
+    timeEl.className='slot-time'+(status==='rejected'?' disabled':'');
+    timeEl.textContent=s;
+    row.appendChild(timeEl);
+
+    const locWrap=document.createElement('div'); locWrap.className='loc-btns';
+
+    if(status){
+      // 送信済み：勤務地を固定表示
+      LOCS.forEach(loc=>{
+        const b=document.createElement('button'); b.className='loc-btn locked'+(loc===lockedLoc?' sel':'');
+        b.textContent=loc; b.disabled=true;
+        locWrap.appendChild(b);
+      });
+      const badge=document.createElement('span');
+      badge.className='slot-status '+(status==='pending'?'ss-pending':status==='accepted'?'ss-accepted':'ss-rejected');
+      badge.textContent=status==='pending'?'依頼中':status==='accepted'?'✓ 承諾':'✕ 拒否';
+      row.appendChild(locWrap); row.appendChild(badge);
+    } else {
+      // 未送信：勤務地を選択
+      LOCS.forEach(loc=>{
+        const b=document.createElement('button'); b.className='loc-btn'+(jSel[s]===loc?' sel':'');
+        b.textContent=loc;
+        b.onclick=()=>{
+          if(jSel[s]===loc){ delete jSel[s] } else { jSel[s]=loc }
+          renderJukuSlots();
+        };
+        locWrap.appendChild(b);
+      });
+      row.appendChild(locWrap);
+    }
+
+    c.appendChild(row);
   });
 }
+
 async function sendRequest(){
   const tutor=gs('juku-tutor').value;
-  if(!tutor||!jDate||jSel.size===0){ toast('講師・日付・時間帯を選択してください'); return }
+  const selected=Object.entries(jSel).filter(([,v])=>v);
+  if(!tutor||!jDate||selected.length===0){ toast('講師・日付・時間帯と勤務地を選択してください'); return }
   await loadData();
   if(!requests[jDate]) requests[jDate]={};
   if(!requests[jDate][tutor]) requests[jDate][tutor]={};
-  jSel.forEach(s=>{ requests[jDate][tutor][s]='pending' });
+  selected.forEach(([slot,loc])=>{ requests[jDate][tutor][slot]={status:'pending',location:loc} });
   await saveRequests();
-  jSel.clear(); renderJukuSlots(); renderCal();
+  jSel={}; renderJukuSlots(); renderCal();
   toast(`${tutor}講師に依頼を送りました`);
 }
 
@@ -461,7 +480,9 @@ function renderCal2(){
     g.appendChild(e);
   }
 }
+
 function selTDate(k){ tDate=k; tSel.clear(); renderCal2(); renderTAbsSlots() }
+
 function renderTAbsSlots(){
   const wrap=gs('tslot-wrap');
   if(!tDate){ wrap.style.display='none'; return }
@@ -470,14 +491,24 @@ function renderTAbsSlots(){
   const c=gs('tabs-slots'); c.innerHTML='';
   SLOTS.forEach(s=>{
     const status=absences[tDate]?.[currentTutor]?.[s]||null;
-    const b=document.createElement('button'); b.className='slot';
-    if(status==='absence-pending'){b.classList.add('st-ab-pending');b.textContent=s+' (申請中)'}
-    else if(status==='absence-accepted'){b.classList.add('st-ab-accepted');b.textContent=s+' ✓ 承認済み'}
-    else{ if(tSel.has(s)) b.classList.add('sel'); b.textContent=s }
-    b.onclick=()=>{ if(!status){ tSel.has(s)?tSel.delete(s):tSel.add(s); renderTAbsSlots() } };
-    c.appendChild(b);
+    const row=document.createElement('div'); row.className='abs-slot-row';
+    const timeEl=document.createElement('span'); timeEl.className='abs-slot-time'; timeEl.textContent=s;
+    row.appendChild(timeEl);
+    if(status){
+      const badge=document.createElement('span');
+      badge.className='slot-status '+(status==='absence-pending'?'ss-ab-pending':'ss-ab-accepted');
+      badge.textContent=status==='absence-pending'?'申請中':'承認済み';
+      row.appendChild(badge);
+    } else {
+      const chk=document.createElement('input'); chk.type='checkbox'; chk.className='abs-chk';
+      chk.checked=tSel.has(s);
+      chk.onchange=()=>{ tSel.has(s)?tSel.delete(s):tSel.add(s) };
+      row.appendChild(chk);
+    }
+    c.appendChild(row);
   });
 }
+
 async function sendAbsence(){
   if(!tDate||tSel.size===0){ toast('日付と時間帯を選択してください'); return }
   await loadData();
@@ -493,29 +524,33 @@ async function sendAbsence(){
 function renderTReqs(){
   const c=gs('treq-list'); c.innerHTML='';
   let any=false;
-  Object.entries(requests).forEach(([date,tutors])=>{
+  Object.entries(requests).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([date,tutors])=>{
     const slots=tutors[currentTutor]; if(!slots) return;
-    Object.entries(slots).forEach(([slot,status])=>{
+    Object.entries(slots).forEach(([slot,entry])=>{
+      const status=entry?.status||entry; // 旧データ互換
+      const location=entry?.location||'';
       any=true;
       const item=document.createElement('div'); item.className='req-item';
       const lbl={pending:'未回答',accepted:'承諾済み',rejected:'拒否済み'}[status];
       const bc={pending:'pending',accepted:'accepted',rejected:'rejected'}[status];
-      item.innerHTML=`<div class="ri-top"><span class="ri-label">${fd(date)}　${slot}</span><span class="badge ${bc}">${lbl}</span></div>`;
+      item.innerHTML=`<div class="ri-top">
+        <span class="ri-label">${fd(date)}　${slot}</span>
+        ${location?`<span class="ri-loc"><i class="ti ti-map-pin" style="font-size:11px"></i> ${location}</span>`:''}
+        <span class="badge ${bc}">${lbl}</span>
+      </div>`;
       if(status==='pending'){
         const row=document.createElement('div'); row.className='btn-row';
         const ba=document.createElement('button'); ba.className='btn success'; ba.innerHTML='<i class="ti ti-check"></i> 承諾';
         ba.onclick=async()=>{
           await loadData();
-          requests[date][currentTutor][slot]='accepted';
-          await saveRequests(); renderTReqs();
-          toast('承諾しました');
+          requests[date][currentTutor][slot]={status:'accepted',location};
+          await saveRequests(); renderTReqs(); toast('承諾しました');
         };
         const br=document.createElement('button'); br.className='btn danger'; br.innerHTML='<i class="ti ti-x"></i> 拒否';
         br.onclick=async()=>{
           await loadData();
-          requests[date][currentTutor][slot]='rejected';
-          await saveRequests(); renderTReqs();
-          toast('拒否しました');
+          requests[date][currentTutor][slot]={status:'rejected',location};
+          await saveRequests(); renderTReqs(); toast('拒否しました');
         };
         row.appendChild(ba); row.appendChild(br); item.appendChild(row);
       }
@@ -529,7 +564,7 @@ function renderTReqs(){
 function renderJAbs(){
   const c=gs('jabs-list'); c.innerHTML='';
   let any=false;
-  Object.entries(absences).forEach(([date,tutors])=>{
+  Object.entries(absences).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([date,tutors])=>{
     Object.entries(tutors).forEach(([tutor,slots])=>{
       Object.entries(slots).forEach(([slot,status])=>{
         any=true;
@@ -543,8 +578,7 @@ function renderJAbs(){
           ba.onclick=async()=>{
             await loadData();
             absences[date][tutor][slot]='absence-accepted';
-            await saveAbsences(); renderJAbs();
-            toast(`${tutor}の欠勤を承認しました`);
+            await saveAbsences(); renderJAbs(); toast(`${tutor}の欠勤を承認しました`);
           };
           row.appendChild(ba); item.appendChild(row);
         }
@@ -561,41 +595,56 @@ function renderJSch(){
   let items=[];
   Object.entries(requests).forEach(([date,tutors])=>{
     Object.entries(tutors).forEach(([tutor,slots])=>{
-      Object.entries(slots).forEach(([slot,status])=>{ if(status==='accepted') items.push({date,tutor,slot,type:'work'}) });
+      Object.entries(slots).forEach(([slot,entry])=>{
+        const status=entry?.status||entry;
+        const location=entry?.location||'';
+        if(status==='accepted') items.push({date,tutor,slot,location,type:'work'});
+      });
     });
   });
   Object.entries(absences).forEach(([date,tutors])=>{
     Object.entries(tutors).forEach(([tutor,slots])=>{
-      Object.entries(slots).forEach(([slot,status])=>{ if(status==='absence-accepted') items.push({date,tutor,slot,type:'abs'}) });
+      Object.entries(slots).forEach(([slot,status])=>{
+        if(status==='absence-accepted') items.push({date,tutor,slot,location:'',type:'abs'});
+      });
     });
   });
-  items.sort((a,b)=>a.date.localeCompare(b.date));
+  items.sort((a,b)=>a.date.localeCompare(b.date)||a.slot.localeCompare(b.slot));
   if(!items.length){ c.innerHTML='<div class="empty">確定済みの予定はありません</div>'; return }
   c.innerHTML='<div class="sch-list">'+items.map(it=>`
     <div class="sch-item">
       <span class="sch-date">${fd(it.date)}</span>
       <span class="sch-name">${it.tutor}</span>
       <span class="sch-time">${it.slot}</span>
+      ${it.location?`<span class="sch-loc">${it.location}</span>`:''}
       <span class="sch-badge ${it.type==='work'?'sb-work':'sb-abs'}">${it.type==='work'?'勤務':'欠勤'}</span>
     </div>`).join('')+'</div>';
 }
+
 function renderTSch(){
   const c=gs('tsch-list');
   let items=[];
   Object.entries(requests).forEach(([date,tutors])=>{
     const sl=tutors[currentTutor]; if(!sl) return;
-    Object.entries(sl).forEach(([slot,status])=>{ if(status==='accepted') items.push({date,slot,type:'work'}) });
+    Object.entries(sl).forEach(([slot,entry])=>{
+      const status=entry?.status||entry;
+      const location=entry?.location||'';
+      if(status==='accepted') items.push({date,slot,location,type:'work'});
+    });
   });
   Object.entries(absences).forEach(([date,tutors])=>{
     const sl=tutors[currentTutor]; if(!sl) return;
-    Object.entries(sl).forEach(([slot,status])=>{ if(status==='absence-accepted') items.push({date,slot,type:'abs'}) });
+    Object.entries(sl).forEach(([slot,status])=>{
+      if(status==='absence-accepted') items.push({date,slot,location:'',type:'abs'});
+    });
   });
-  items.sort((a,b)=>a.date.localeCompare(b.date));
+  items.sort((a,b)=>a.date.localeCompare(b.date)||a.slot.localeCompare(b.slot));
   if(!items.length){ c.innerHTML='<div class="empty">確定済みの予定はありません</div>'; return }
   c.innerHTML='<div class="sch-list">'+items.map(it=>`
     <div class="sch-item">
       <span class="sch-date">${fd(it.date)}</span>
       <span class="sch-time">${it.slot}</span>
+      ${it.location?`<span class="sch-loc">${it.location}</span>`:''}
       <span class="sch-badge ${it.type==='work'?'sb-work':'sb-abs'}">${it.type==='work'?'勤務':'欠勤'}</span>
     </div>`).join('')+'</div>';
 }
