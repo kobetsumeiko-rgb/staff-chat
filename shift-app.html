@@ -310,7 +310,14 @@ async function saveAbsences(){
 window.addEventListener('DOMContentLoaded', async ()=>{
   const params=new URLSearchParams(location.search);
   const tid=params.get('tutor');
-  if(tid){ const found=TUTORS.find(t=>t.id===tid); if(found){ await autoLoginTutor(found); return } }
+  if(tid){
+    // 講師URLの場合は最初からロール選択画面を隠す
+    show('screen-role', false);
+    const found=TUTORS.find(t=>t.id===tid);
+    if(found){ await autoLoginTutor(found); return }
+    // IDが一致しない場合は戻す
+    show('screen-role', true);
+  }
 });
 
 async function autoLoginTutor(tutor){
