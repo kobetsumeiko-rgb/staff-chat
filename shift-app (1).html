@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>シフト管理</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans JP',sans-serif;background:#f5f4f0;min-height:100vh;color:#1a1a1a}
+.app{max-width:640px;margin:0 auto;padding:0 0 3rem}
+.screen{display:none}.screen.active{display:block}
+#screen-role{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem}
+.app-logo{font-size:12px;letter-spacing:.15em;color:#aaa;margin-bottom:2rem;text-transform:uppercase}
+.role-heading{font-size:24px;font-weight:700;margin-bottom:6px;text-align:center}
+.role-sub{font-size:14px;color:#888;margin-bottom:2rem;text-align:center}
+.role-cards{display:flex;gap:16px;width:100%;max-width:440px}
+.role-card{flex:1;background:#fff;border:1.5px solid #e8e6e0;border-radius:16px;padding:2rem 1.5rem;text-align:center;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.role-card:hover{border-color:#888;box-shadow:0 4px 20px rgba(0,0,0,.07)}
+.role-card i{font-size:30px;color:#555;margin-bottom:10px;display:block}
+.role-card .rc-label{font-size:17px;font-weight:700;margin-bottom:4px}
+.role-card .rc-sub{font-size:12px;color:#888}
+.tutor-link-list{width:100%;max-width:440px;margin-top:.5rem}
+.tutor-link-item{background:#fff;border:1px solid #e8e6e0;border-radius:10px;margin-bottom:8px;display:flex;align-items:center;padding:12px 16px;gap:12px}
+.tutor-link-item .tl-name{font-size:14px;font-weight:500;flex:1;white-space:nowrap}
+.tutor-link-item .tl-url{font-size:11px;color:#aaa;word-break:break-all;flex:2}
+.copy-btn{background:none;border:1px solid #ddd;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;color:#555;white-space:nowrap;font-family:inherit}
+.copy-btn:hover{background:#f0efeb}
+.divider-or{text-align:center;color:#aaa;font-size:12px;margin:1rem 0;position:relative}
+.divider-or::before{content:'';position:absolute;left:0;top:50%;width:40%;height:1px;background:#e0e0e0}
+.divider-or::after{content:'';position:absolute;right:0;top:50%;width:40%;height:1px;background:#e0e0e0}
+.hdr{display:flex;align-items:center;gap:10px;padding:1.25rem 1.25rem .25rem}
+.back-btn{background:none;border:1px solid #ddd;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:14px;color:#555;display:flex;align-items:center;gap:4px;font-family:inherit}
+.back-btn:hover{background:#f0efeb}
+.hdr-title{font-size:17px;font-weight:700;flex:1}
+.role-pill{font-size:12px;padding:4px 10px;border-radius:99px;background:#fff;border:1px solid #e0e0e0;color:#555;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.tabs{display:flex;gap:3px;padding:.75rem 1.25rem;background:#f5f4f0;position:sticky;top:0;z-index:10}
+.tab{flex:1;padding:8px;border:1px solid #ddd;background:#fff;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:#888;font-family:'Noto Sans JP',sans-serif;transition:background .12s,color .12s,border-color .12s}
+.tab.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.content{padding:0 1.25rem}
+.tab-pane{display:none;padding-top:1rem}.tab-pane.active{display:block}
+.sec-label{font-size:11px;letter-spacing:.1em;color:#999;text-transform:uppercase;margin-bottom:10px;font-weight:500}
+.tutor-row{display:flex;align-items:center;gap:10px;margin-bottom:1rem}
+.tutor-row label{font-size:13px;color:#666;white-space:nowrap}
+select{padding:8px 12px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#1a1a1a;font-size:13px;font-family:'Noto Sans JP',sans-serif;cursor:pointer}
+.cal-nav{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.cal-nav button{background:#fff;border:1px solid #ddd;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px;color:#555;font-family:inherit}
+.cal-nav button:hover{background:#f0efeb}
+.cal-month{font-size:15px;font-weight:700;flex:1}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-dow{text-align:center;font-size:11px;color:#aaa;padding-bottom:4px;font-weight:500}
+.cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:8px;font-size:13px;cursor:pointer;color:#1a1a1a;border:1.5px solid transparent;transition:background .1s}
+.cal-day:hover:not(.empty):not(.other){background:#f0efeb}
+.cal-day.selected{background:#1a1a1a;color:#fff}
+.cal-day.empty,.cal-day.other{cursor:default;color:#ccc}
+.cal-dot{width:5px;height:5px;border-radius:50%;background:#888;flex-shrink:0}
+.cal-day.selected .cal-dot{background:#ccc}
+.slot-wrap{margin-top:1rem;background:#fff;border:1px solid #e8e6e0;border-radius:12px;padding:1rem 1.25rem}
+.slot-wrap-title{font-size:14px;font-weight:700;margin-bottom:10px}
+.slots{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.slot{padding:7px 16px;border-radius:99px;border:1.5px solid #ddd;font-size:13px;cursor:pointer;color:#1a1a1a;background:#fff;font-family:inherit;transition:background .1s}
+.slot:hover:not([disabled]){background:#f0efeb}
+.slot.sel{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.slot.st-pending{background:#FAEEDA;border-color:#EF9F27;color:#633806}
+.slot.st-accepted{background:#EAF3DE;border-color:#639922;color:#1a3a08}
+.slot.st-rejected{background:#FCEBEB;border-color:#E24B4A;color:#500}
+.slot.st-ab-pending{background:#FBEAF0;border-color:#D4537E;color:#4B1528}
+.slot.st-ab-accepted{background:#EAF3DE;border-color:#639922;color:#1a3a08}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.leg{display:flex;align-items:center;gap:5px;font-size:11px;color:#888}
+.leg-dot{width:9px;height:9px;border-radius:50%}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;border:1.5px solid #ddd;background:#fff;font-size:13px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;color:#1a1a1a;transition:background .1s;font-weight:500}
+.btn:hover{background:#f0efeb}
+.btn.primary{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
+.btn.primary:hover{background:#333}
+.btn.success{background:#EAF3DE;border-color:#639922;color:#1a3a08}
+.btn.success:hover{background:#C0DD97}
+.btn.danger{background:#FCEBEB;border-color:#E24B4A;color:#500}
+.btn.danger:hover{background:#F7C1C1}
+.req-list{display:flex;flex-direction:column;gap:10px}
+.req-item{background:#fff;border:1px solid #e8e6e0;border-radius:12px;padding:12px 14px}
+.ri-top{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.ri-label{font-size:14px;font-weight:500;flex:1}
+.badge{font-size:11px;padding:3px 10px;border-radius:99px;font-weight:500}
+.badge.pending{background:#FAEEDA;color:#633806}
+.badge.accepted{background:#EAF3DE;color:#1a3a08}
+.badge.rejected{background:#FCEBEB;color:#500}
+.badge.ab-pending{background:#FBEAF0;color:#4B1528}
+.sch-list{display:flex;flex-direction:column}
+.sch-item{display:flex;align-items:center;gap:10px;padding:11px 14px;background:#fff;border-bottom:1px solid #f0efeb}
+.sch-item:first-child{border-radius:12px 12px 0 0}
+.sch-item:last-child{border-radius:0 0 12px 12px;border-bottom:none}
+.sch-date{font-size:13px;font-weight:700;min-width:90px}
+.sch-name{font-size:13px;color:#555;flex:1}
+.sch-time{font-size:13px;color:#777;min-width:120px}
+.sch-badge{font-size:11px;padding:2px 9px;border-radius:99px}
+.sb-work{background:#EAF3DE;color:#1a3a08}
+.sb-abs{background:#FBEAF0;color:#4B1528}
+.empty{text-align:center;padding:2.5rem;color:#aaa;font-size:14px}
+.loading{text-align:center;padding:2rem;color:#aaa;font-size:13px}
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:100;white-space:nowrap}
+.toast.show{opacity:1}
+.sync-indicator{font-size:11px;color:#aaa;text-align:right;padding:.25rem 1.25rem 0}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ロール選択 -->
+<div class="screen active" id="screen-role">
+  <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem">
+    <div class="app-logo">Shift Manager</div>
+    <div class="role-heading">シフト管理</div>
+    <div class="role-sub">どちらの立場で使いますか？</div>
+    <div class="role-cards">
+      <div class="role-card" onclick="setRole('juku')">
+        <i class="ti ti-building-store"></i>
+        <div class="rc-label">塾側</div>
+        <div class="rc-sub">勤務依頼・欠勤承認</div>
+      </div>
+      <div class="role-card" onclick="showTutorLinks()">
+        <i class="ti ti-user-circle"></i>
+        <div class="rc-label">講師リンク</div>
+        <div class="rc-sub">各講師の専用URLを確認</div>
+      </div>
+    </div>
+    <div id="tutor-links-section" style="display:none;width:100%;max-width:440px;margin-top:1.5rem">
+      <div class="divider-or">講師別専用リンク</div>
+      <div class="tutor-link-list" id="tutor-link-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 塾側 -->
+<div class="screen" id="screen-juku">
+  <div class="hdr">
+    <button class="back-btn" onclick="goRole()"><i class="ti ti-arrow-left"></i></button>
+    <span class="hdr-title">シフト管理</span>
+    <div class="role-pill"><i class="ti ti-building-store" style="font-size:13px"></i> 塾側</div>
+  </div>
+  <div class="sync-indicator" id="juku-sync"></div>
+  <div class="tabs">
+    <button class="tab active" id="jtab-request" onclick="jSwitch('request')">勤務依頼</button>
+    <button class="tab" id="jtab-absence" onclick="jSwitch('absence')">欠勤承認</button>
+    <button class="tab" id="jtab-schedule" onclick="jSwitch('schedule')">確定予定</button>
+  </div>
+  <div class="content">
+    <div class="tab-pane active" id="jpane-request">
+      <div class="tutor-row">
+        <label>対象講師：</label>
+        <select id="juku-tutor" onchange="renderJukuSlots()"><option value="">選択してください</option></select>
+      </div>
+      <div class="sec-label">日付を選択</div>
+      <div class="cal-nav">
+        <button onclick="cm(-1)"><i class="ti ti-chevron-left"></i></button>
+        <span class="cal-month" id="cal-lbl"></span>
+        <button onclick="cm(1)"><i class="ti ti-chevron-right"></i></button>
+      </div>
+      <div class="cal-grid" id="jcal"></div>
+      <div id="jslot-wrap" style="display:none" class="slot-wrap">
+        <div class="slot-wrap-title" id="jslot-title"></div>
+        <div class="legend">
+          <div class="leg"><div class="leg-dot" style="background:#EF9F27"></div>依頼中</div>
+          <div class="leg"><div class="leg-dot" style="background:#639922"></div>承諾済み</div>
+          <div class="leg"><div class="leg-dot" style="background:#E24B4A"></div>拒否済み</div>
+        </div>
+        <div class="slots" id="jslots"></div>
+        <div class="btn-row">
+          <button class="btn primary" onclick="sendRequest()"><i class="ti ti-send"></i> 依頼を送る</button>
+        </div>
+      </div>
+    </div>
+    <div class="tab-pane" id="jpane-absence">
+      <div class="sec-label">講師からの欠勤申請</div>
+      <div class="req-list" id="jabs-list"></div>
+    </div>
+    <div class="tab-pane" id="jpane-schedule">
+      <div class="sec-label">確定済みシフト一覧</div>
+      <div id="jsch-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 講師側 -->
+<div class="screen" id="screen-tutor">
+  <div class="hdr">
+    <div style="display:flex;flex-direction:column;flex:1">
+      <span class="hdr-title" id="tutor-hdr-name"></span>
+      <span style="font-size:12px;color:#aaa;margin-top:1px">講師専用ページ</span>
+    </div>
+    <div class="role-pill"><i class="ti ti-user-circle" style="font-size:13px"></i> 講師</div>
+  </div>
+  <div class="sync-indicator" id="tutor-sync"></div>
+  <div class="tabs">
+    <button class="tab active" id="ttab-requests" onclick="tSwitch('requests')">塾からの依頼</button>
+    <button class="tab" id="ttab-absence" onclick="tSwitch('absence')">欠勤申請</button>
+    <button class="tab" id="ttab-schedule" onclick="tSwitch('schedule')">確定予定</button>
+  </div>
+  <div class="content">
+    <div class="tab-pane active" id="tpane-requests">
+      <div class="req-list" id="treq-list"></div>
+    </div>
+    <div class="tab-pane" id="tpane-absence">
+      <div class="sec-label">欠勤希望日を選択</div>
+      <div class="cal-nav">
+        <button onclick="cm2(-1)"><i class="ti ti-chevron-left"></i></button>
+        <span class="cal-month" id="cal-lbl2"></span>
+        <button onclick="cm2(1)"><i class="ti ti-chevron-right"></i></button>
+      </div>
+      <div class="cal-grid" id="tcal"></div>
+      <div id="tslot-wrap" style="display:none" class="slot-wrap">
+        <div class="slot-wrap-title" id="tslot-title"></div>
+        <div class="legend">
+          <div class="leg"><div class="leg-dot" style="background:#D4537E"></div>申請中</div>
+          <div class="leg"><div class="leg-dot" style="background:#639922"></div>承認済み</div>
+        </div>
+        <div class="slots" id="tabs-slots"></div>
+        <div class="btn-row">
+          <button class="btn danger" onclick="sendAbsence()"><i class="ti ti-calendar-off"></i> 欠勤申請を送る</button>
+        </div>
+      </div>
+    </div>
+    <div class="tab-pane" id="tpane-schedule">
+      <div class="sec-label">確定済みシフト</div>
+      <div id="tsch-list"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'https://shift-api.kobetsu-meiko.workers.dev';
+
+const TUTORS = [
+  { id: 'asamura',    name: '浅村結良' },
+  { id: 'koyama',     name: '小山陽樹' },
+  { id: 'watanuki',   name: '綿貫心暖' },
+  { id: 'takazawa',   name: '高澤雅樹' },
+  { id: 'miyazaki',   name: '宮崎久仁子' },
+  { id: 'midorikawa', name: '緑川智洸' },
+];
+const SLOTS = ['13:00〜15:00','15:00〜17:00','17:00〜19:00','19:00〜21:00'];
+
+let requests = {}, absences = {};
+let role = null, currentTutor = null;
+let cY, cM, cY2, cM2;
+let jDate = null, tDate = null;
+let jSel = new Set(), tSel = new Set();
+
+function dk(y,m,d){ return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}` }
+function fd(k){ const[,m,d]=k.split('-'); return `${parseInt(m)}月${parseInt(d)}日` }
+function gs(id){ return document.getElementById(id) }
+function show(id,v=true){ gs(id).classList.toggle('active',v) }
+
+function toast(msg){
+  const t=gs('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+function setSyncLabel(id, msg){ const el=gs(id); if(el) el.textContent=msg; }
+
+// ===== API =====
+async function loadData(){
+  try {
+    const res = await fetch(`${API}/data`);
+    const data = await res.json();
+    requests = data.requests || {};
+    absences = data.absences || {};
+  } catch(e) {
+    toast('通信エラー：データを取得できませんでした');
+  }
+}
+
+async function saveRequests(){
+  try {
+    await fetch(`${API}/data`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ requests })
+    });
+  } catch(e) {
+    toast('通信エラー：保存できませんでした');
+  }
+}
+
+async function saveAbsences(){
+  try {
+    await fetch(`${API}/data`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ absences })
+    });
+  } catch(e) {
+    toast('通信エラー：保存できませんでした');
+  }
+}
+
+// ===== 起動時URLチェック =====
+window.addEventListener('DOMContentLoaded', async ()=>{
+  const params = new URLSearchParams(location.search);
+  const tid = params.get('tutor');
+  if(tid){
+    const found = TUTORS.find(t=>t.id===tid);
+    if(found){ await autoLoginTutor(found); return; }
+  }
+});
+
+async function autoLoginTutor(tutor){
+  currentTutor = tutor.name;
+  gs('tutor-hdr-name').textContent = tutor.name;
+  const n=new Date(); cY2=n.getFullYear(); cM2=n.getMonth();
+  setSyncLabel('tutor-sync','読み込み中...');
+  await loadData();
+  setSyncLabel('tutor-sync','');
+  renderCal2(); renderTReqs(); renderTSch();
+  show('screen-role',false);
+  show('screen-tutor');
+}
+
+// ===== ロール選択 =====
+async function setRole(r){
+  role = r;
+  const sel = gs('juku-tutor');
+  sel.innerHTML = '<option value="">選択してください</option>';
+  TUTORS.forEach(t=>{ const o=document.createElement('option'); o.value=t.name; o.textContent=t.name; sel.appendChild(o); });
+  const n=new Date(); cY=n.getFullYear(); cM=n.getMonth();
+  setSyncLabel('juku-sync','読み込み中...');
+  await loadData();
+  setSyncLabel('juku-sync','');
+  renderCal();
+  show('screen-role',false); show('screen-juku');
+}
+
+function showTutorLinks(){
+  const sec = gs('tutor-links-section');
+  const list = gs('tutor-link-list');
+  list.innerHTML = '';
+  const base = location.origin + location.pathname;
+  TUTORS.forEach(t=>{
+    const url = `${base}?tutor=${t.id}`;
+    const item = document.createElement('div'); item.className='tutor-link-item';
+    item.innerHTML=`
+      <span class="tl-name">${t.name}</span>
+      <span class="tl-url">${url}</span>
+      <button class="copy-btn" onclick="copyUrl('${url}',this)"><i class="ti ti-copy" style="font-size:12px"></i> コピー</button>
+    `;
+    list.appendChild(item);
+  });
+  sec.style.display='block';
+}
+
+function copyUrl(url, btn){
+  navigator.clipboard.writeText(url).then(()=>{
+    btn.innerHTML='<i class="ti ti-check" style="font-size:12px"></i> コピー済み';
+    setTimeout(()=>btn.innerHTML='<i class="ti ti-copy" style="font-size:12px"></i> コピー',2000);
+    toast('リンクをコピーしました');
+  });
+}
+
+function goRole(){
+  show('screen-juku',false); show('screen-tutor',false);
+  gs('tutor-links-section').style.display='none';
+  show('screen-role');
+}
+
+// ===== 塾側タブ =====
+function jSwitch(tab){
+  ['request','absence','schedule'].forEach(t=>{
+    gs('jtab-'+t).classList.toggle('active',t===tab);
+    gs('jpane-'+t).classList.toggle('active',t===tab);
+  });
+  if(tab==='absence') loadAndRender(renderJAbs,'juku-sync');
+  if(tab==='schedule') loadAndRender(renderJSch,'juku-sync');
+}
+function tSwitch(tab){
+  ['requests','absence','schedule'].forEach(t=>{
+    gs('ttab-'+t).classList.toggle('active',t===tab);
+    gs('tpane-'+t).classList.toggle('active',t===tab);
+  });
+  if(tab==='requests') loadAndRender(renderTReqs,'tutor-sync');
+  if(tab==='schedule') loadAndRender(renderTSch,'tutor-sync');
+}
+
+async function loadAndRender(fn, syncId){
+  setSyncLabel(syncId,'更新中...');
+  await loadData();
+  setSyncLabel(syncId,'');
+  fn();
+}
+
+// ===== カレンダー1（塾側） =====
+function cm(d){ cM+=d; if(cM>11){cM=0;cY++} if(cM<0){cM=11;cY--} renderCal() }
+function renderCal(){
+  gs('cal-lbl').textContent=`${cY}年${cM+1}月`;
+  const g=gs('jcal'); g.innerHTML='';
+  ['日','月','火','水','木','金','土'].forEach(d=>{ const e=document.createElement('div'); e.className='cal-dow'; e.textContent=d; g.appendChild(e) });
+  const first=new Date(cY,cM,1).getDay();
+  for(let i=0;i<first;i++){ const e=document.createElement('div'); e.className='cal-day empty'; g.appendChild(e) }
+  const days=new Date(cY,cM+1,0).getDate();
+  const tutor=gs('juku-tutor').value;
+  for(let d=1;d<=days;d++){
+    const k=dk(cY,cM,d);
+    const e=document.createElement('div'); e.className='cal-day';
+    e.textContent=d;
+    if(k===jDate) e.classList.add('selected');
+    if(tutor && requests[k]?.[tutor]){ const dot=document.createElement('div'); dot.className='cal-dot'; e.appendChild(dot) }
+    e.onclick=()=>selJDate(k);
+    g.appendChild(e);
+  }
+}
+function selJDate(k){ jDate=k; jSel.clear(); renderCal(); renderJukuSlots() }
+function renderJukuSlots(){
+  const tutor=gs('juku-tutor').value;
+  const wrap=gs('jslot-wrap');
+  if(!jDate||!tutor){ wrap.style.display='none'; return }
+  wrap.style.display='block';
+  gs('jslot-title').textContent=`${fd(jDate)}　${tutor} 講師`;
+  const c=gs('jslots'); c.innerHTML='';
+  SLOTS.forEach(s=>{
+    const status=requests[jDate]?.[tutor]?.[s]||null;
+    const b=document.createElement('button'); b.className='slot';
+    if(status==='pending'){b.classList.add('st-pending');b.textContent=s+' (依頼中)'}
+    else if(status==='accepted'){b.classList.add('st-accepted');b.textContent=s+' ✓ 承諾'}
+    else if(status==='rejected'){b.classList.add('st-rejected');b.textContent=s+' ✕ 拒否'}
+    else{ if(jSel.has(s)) b.classList.add('sel'); b.textContent=s }
+    b.onclick=()=>{ if(!status){ jSel.has(s)?jSel.delete(s):jSel.add(s); renderJukuSlots() } };
+    c.appendChild(b);
+  });
+}
+async function sendRequest(){
+  const tutor=gs('juku-tutor').value;
+  if(!tutor||!jDate||jSel.size===0){ toast('講師・日付・時間帯を選択してください'); return }
+  await loadData();
+  if(!requests[jDate]) requests[jDate]={};
+  if(!requests[jDate][tutor]) requests[jDate][tutor]={};
+  jSel.forEach(s=>{ requests[jDate][tutor][s]='pending' });
+  await saveRequests();
+  jSel.clear(); renderJukuSlots(); renderCal();
+  toast(`${tutor}講師に依頼を送りました`);
+}
+
+// ===== カレンダー2（講師欠勤） =====
+function cm2(d){ cM2+=d; if(cM2>11){cM2=0;cY2++} if(cM2<0){cM2=11;cY2--} renderCal2() }
+function renderCal2(){
+  gs('cal-lbl2').textContent=`${cY2}年${cM2+1}月`;
+  const g=gs('tcal'); g.innerHTML='';
+  ['日','月','火','水','木','金','土'].forEach(d=>{ const e=document.createElement('div'); e.className='cal-dow'; e.textContent=d; g.appendChild(e) });
+  const first=new Date(cY2,cM2,1).getDay();
+  for(let i=0;i<first;i++){ const e=document.createElement('div'); e.className='cal-day empty'; g.appendChild(e) }
+  const days=new Date(cY2,cM2+1,0).getDate();
+  for(let d=1;d<=days;d++){
+    const k=dk(cY2,cM2,d);
+    const e=document.createElement('div'); e.className='cal-day';
+    e.textContent=d;
+    if(k===tDate) e.classList.add('selected');
+    if(absences[k]?.[currentTutor]){ const dot=document.createElement('div'); dot.className='cal-dot'; e.appendChild(dot) }
+    e.onclick=()=>selTDate(k);
+    g.appendChild(e);
+  }
+}
+function selTDate(k){ tDate=k; tSel.clear(); renderCal2(); renderTAbsSlots() }
+function renderTAbsSlots(){
+  const wrap=gs('tslot-wrap');
+  if(!tDate){ wrap.style.display='none'; return }
+  wrap.style.display='block';
+  gs('tslot-title').textContent=fd(tDate);
+  const c=gs('tabs-slots'); c.innerHTML='';
+  SLOTS.forEach(s=>{
+    const status=absences[tDate]?.[currentTutor]?.[s]||null;
+    const b=document.createElement('button'); b.className='slot';
+    if(status==='absence-pending'){b.classList.add('st-ab-pending');b.textContent=s+' (申請中)'}
+    else if(status==='absence-accepted'){b.classList.add('st-ab-accepted');b.textContent=s+' ✓ 承認済み'}
+    else{ if(tSel.has(s)) b.classList.add('sel'); b.textContent=s }
+    b.onclick=()=>{ if(!status){ tSel.has(s)?tSel.delete(s):tSel.add(s); renderTAbsSlots() } };
+    c.appendChild(b);
+  });
+}
+async function sendAbsence(){
+  if(!tDate||tSel.size===0){ toast('日付と時間帯を選択してください'); return }
+  await loadData();
+  if(!absences[tDate]) absences[tDate]={};
+  if(!absences[tDate][currentTutor]) absences[tDate][currentTutor]={};
+  tSel.forEach(s=>{ absences[tDate][currentTutor][s]='absence-pending' });
+  await saveAbsences();
+  tSel.clear(); renderTAbsSlots(); renderCal2();
+  toast('欠勤申請を送りました');
+}
+
+// ===== 講師：依頼確認 =====
+function renderTReqs(){
+  const c=gs('treq-list'); c.innerHTML='';
+  let any=false;
+  Object.entries(requests).forEach(([date,tutors])=>{
+    const slots=tutors[currentTutor]; if(!slots) return;
+    Object.entries(slots).forEach(([slot,status])=>{
+      any=true;
+      const item=document.createElement('div'); item.className='req-item';
+      const lbl={pending:'未回答',accepted:'承諾済み',rejected:'拒否済み'}[status];
+      const bc={pending:'pending',accepted:'accepted',rejected:'rejected'}[status];
+      item.innerHTML=`<div class="ri-top"><span class="ri-label">${fd(date)}　${slot}</span><span class="badge ${bc}">${lbl}</span></div>`;
+      if(status==='pending'){
+        const row=document.createElement('div'); row.className='btn-row';
+        const ba=document.createElement('button'); ba.className='btn success'; ba.innerHTML='<i class="ti ti-check"></i> 承諾';
+        ba.onclick=async()=>{
+          await loadData();
+          requests[date][currentTutor][slot]='accepted';
+          await saveRequests(); renderTReqs();
+          toast('承諾しました');
+        };
+        const br=document.createElement('button'); br.className='btn danger'; br.innerHTML='<i class="ti ti-x"></i> 拒否';
+        br.onclick=async()=>{
+          await loadData();
+          requests[date][currentTutor][slot]='rejected';
+          await saveRequests(); renderTReqs();
+          toast('拒否しました');
+        };
+        row.appendChild(ba); row.appendChild(br); item.appendChild(row);
+      }
+      c.appendChild(item);
+    });
+  });
+  if(!any) c.innerHTML='<div class="empty">塾からの依頼はありません</div>';
+}
+
+// ===== 塾側：欠勤承認 =====
+function renderJAbs(){
+  const c=gs('jabs-list'); c.innerHTML='';
+  let any=false;
+  Object.entries(absences).forEach(([date,tutors])=>{
+    Object.entries(tutors).forEach(([tutor,slots])=>{
+      Object.entries(slots).forEach(([slot,status])=>{
+        any=true;
+        const item=document.createElement('div'); item.className='req-item';
+        const lbl=status==='absence-accepted'?'承認済み':'申請中';
+        const bc=status==='absence-accepted'?'accepted':'ab-pending';
+        item.innerHTML=`<div class="ri-top"><span class="ri-label">${tutor}　${fd(date)}　${slot}</span><span class="badge ${bc}">${lbl}</span></div>`;
+        if(status==='absence-pending'){
+          const row=document.createElement('div'); row.className='btn-row';
+          const ba=document.createElement('button'); ba.className='btn success'; ba.innerHTML='<i class="ti ti-check"></i> 承認';
+          ba.onclick=async()=>{
+            await loadData();
+            absences[date][tutor][slot]='absence-accepted';
+            await saveAbsences(); renderJAbs();
+            toast(`${tutor}の欠勤を承認しました`);
+          };
+          row.appendChild(ba); item.appendChild(row);
+        }
+        c.appendChild(item);
+      });
+    });
+  });
+  if(!any) c.innerHTML='<div class="empty">欠勤申請はありません</div>';
+}
+
+// ===== 確定予定 =====
+function renderJSch(){
+  const c=gs('jsch-list');
+  let items=[];
+  Object.entries(requests).forEach(([date,tutors])=>{
+    Object.entries(tutors).forEach(([tutor,slots])=>{
+      Object.entries(slots).forEach(([slot,status])=>{ if(status==='accepted') items.push({date,tutor,slot,type:'work'}) });
+    });
+  });
+  Object.entries(absences).forEach(([date,tutors])=>{
+    Object.entries(tutors).forEach(([tutor,slots])=>{
+      Object.entries(slots).forEach(([slot,status])=>{ if(status==='absence-accepted') items.push({date,tutor,slot,type:'abs'}) });
+    });
+  });
+  items.sort((a,b)=>a.date.localeCompare(b.date));
+  if(!items.length){ c.innerHTML='<div class="empty">確定済みの予定はありません</div>'; return }
+  c.innerHTML='<div class="sch-list">'+items.map(it=>`
+    <div class="sch-item">
+      <span class="sch-date">${fd(it.date)}</span>
+      <span class="sch-name">${it.tutor}</span>
+      <span class="sch-time">${it.slot}</span>
+      <span class="sch-badge ${it.type==='work'?'sb-work':'sb-abs'}">${it.type==='work'?'勤務':'欠勤'}</span>
+    </div>`).join('')+'</div>';
+}
+function renderTSch(){
+  const c=gs('tsch-list');
+  let items=[];
+  Object.entries(requests).forEach(([date,tutors])=>{
+    const sl=tutors[currentTutor]; if(!sl) return;
+    Object.entries(sl).forEach(([slot,status])=>{ if(status==='accepted') items.push({date,slot,type:'work'}) });
+  });
+  Object.entries(absences).forEach(([date,tutors])=>{
+    const sl=tutors[currentTutor]; if(!sl) return;
+    Object.entries(sl).forEach(([slot,status])=>{ if(status==='absence-accepted') items.push({date,slot,type:'abs'}) });
+  });
+  items.sort((a,b)=>a.date.localeCompare(b.date));
+  if(!items.length){ c.innerHTML='<div class="empty">確定済みの予定はありません</div>'; return }
+  c.innerHTML='<div class="sch-list">'+items.map(it=>`
+    <div class="sch-item">
+      <span class="sch-date">${fd(it.date)}</span>
+      <span class="sch-time">${it.slot}</span>
+      <span class="sch-badge ${it.type==='work'?'sb-work':'sb-abs'}">${it.type==='work'?'勤務':'欠勤'}</span>
+    </div>`).join('')+'</div>';
+}
+</script>
+</body>
+</html>
