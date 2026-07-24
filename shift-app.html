@@ -455,6 +455,20 @@ function renderJukuSlots(){
       badge.className='slot-status '+(status==='pending'?'ss-pending':status==='accepted'?'ss-accepted':'ss-rejected');
       badge.textContent=status==='pending'?'依頼中':status==='accepted'?'✓ 承諾':'✕ 拒否';
       row.appendChild(locWrap); row.appendChild(badge);
+      // 取り消しボタン
+      const cancelBtn=document.createElement('button');
+      cancelBtn.className='btn'; cancelBtn.style.cssText='padding:4px 10px;font-size:11px;margin-left:auto;color:#888;border-color:#ddd';
+      cancelBtn.innerHTML='<i class="ti ti-trash" style="font-size:12px"></i> 取消';
+      cancelBtn.onclick=async()=>{
+        if(!confirm(`${s}の依頼を取り消しますか？`)) return;
+        await loadData();
+        delete requests[jDate][tutor][s];
+        if(Object.keys(requests[jDate][tutor]).length===0) delete requests[jDate][tutor];
+        if(Object.keys(requests[jDate]||{}).length===0) delete requests[jDate];
+        await saveRequests(); renderJukuSlots(); renderCal();
+        toast('依頼を取り消しました');
+      };
+      row.appendChild(cancelBtn);
     } else {
       // 未送信：勤務地を選択
       LOCS.forEach(loc=>{
@@ -552,7 +566,7 @@ function renderTReqs(){
   Object.entries(requests).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([date,tutors])=>{
     const slots=tutors[currentTutor]; if(!slots) return;
     Object.entries(slots).forEach(([slot,entry])=>{
-      const status=entry?.status||entry; // 旧データ互換
+      const status=entry?.status||entry;
       const location=entry?.location||'';
       any=true;
       const item=document.createElement('div'); item.className='req-item';
@@ -563,8 +577,8 @@ function renderTReqs(){
         ${location?`<span class="ri-loc"><i class="ti ti-map-pin" style="font-size:11px"></i> ${location}</span>`:''}
         <span class="badge ${bc}">${lbl}</span>
       </div>`;
+      const row=document.createElement('div'); row.className='btn-row';
       if(status==='pending'){
-        const row=document.createElement('div'); row.className='btn-row';
         const ba=document.createElement('button'); ba.className='btn success'; ba.innerHTML='<i class="ti ti-check"></i> 承諾';
         ba.onclick=async()=>{
           await loadData();
@@ -577,8 +591,29 @@ function renderTReqs(){
           requests[date][currentTutor][slot]={status:'rejected',location};
           await saveRequests(); renderTReqs(); toast('拒否しました');
         };
-        row.appendChild(ba); row.appendChild(br); item.appendChild(row);
+        row.appendChild(ba); row.appendChild(br);
       }
+      if(status==='accepted'){
+        const br=document.createElement('button'); br.className='btn danger'; br.innerHTML='<i class="ti ti-refresh"></i> 拒否に変更';
+        br.onclick=async()=>{
+          if(!confirm('承諾を取り消して拒否に変更しますか？')) return;
+          await loadData();
+          requests[date][currentTutor][slot]={status:'rejected',location};
+          await saveRequests(); renderTReqs(); renderTSch(); toast('拒否に変更しました');
+        };
+        row.appendChild(br);
+      }
+      if(status==='rejected'){
+        const ba=document.createElement('button'); ba.className='btn success'; ba.innerHTML='<i class="ti ti-refresh"></i> 承諾に変更';
+        ba.onclick=async()=>{
+          if(!confirm('拒否を取り消して承諾に変更しますか？')) return;
+          await loadData();
+          requests[date][currentTutor][slot]={status:'accepted',location};
+          await saveRequests(); renderTReqs(); renderTSch(); toast('承諾に変更しました');
+        };
+        row.appendChild(ba);
+      }
+      if(row.children.length) item.appendChild(row);
       c.appendChild(item);
     });
   });
