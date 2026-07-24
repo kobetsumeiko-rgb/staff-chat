@@ -120,6 +120,17 @@ select{padding:8px 12px;border:1px solid #ddd;border-radius:8px;background:#fff;
 .sch-badge{font-size:11px;padding:2px 9px;border-radius:99px}
 .sb-work{background:#EAF3DE;color:#1a3a08}
 .sb-abs{background:#FBEAF0;color:#4B1528}
+/* 確定予定カレンダー */
+.sch-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:4px}
+.sch-cal-dow{text-align:center;font-size:11px;color:#aaa;padding-bottom:4px;font-weight:500}
+.sch-cal-day{min-height:64px;border-radius:8px;padding:4px;font-size:12px;background:#fff;border:1px solid #f0efeb;display:flex;flex-direction:column;gap:2px}
+.sch-cal-day.empty{background:transparent;border-color:transparent}
+.sch-cal-day .scd-num{font-size:11px;font-weight:700;color:#888;margin-bottom:1px}
+.sch-cal-day.today .scd-num{color:#fff;background:#1a1a1a;border-radius:99px;width:18px;height:18px;display:flex;align-items:center;justify-content:center}
+.sch-cal-entry{font-size:10px;border-radius:4px;padding:1px 4px;line-height:1.4;word-break:break-all}
+.sce-work{background:#EAF3DE;color:#1a3a08}
+.sce-abs{background:#FBEAF0;color:#4B1528}
+
 .empty{text-align:center;padding:2.5rem;color:#aaa;font-size:14px}
 .toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:100;white-space:nowrap}
 .toast.show{opacity:1}
@@ -251,8 +262,12 @@ select{padding:8px 12px;border:1px solid #ddd;border-radius:8px;background:#fff;
       </div>
     </div>
     <div class="tab-pane" id="tpane-schedule">
-      <div class="sec-label">確定済みシフト</div>
-      <div id="tsch-list"></div>
+      <div class="cal-nav">
+        <button onclick="cm3(-1)"><i class="ti ti-chevron-left"></i></button>
+        <span class="cal-month" id="cal-lbl3"></span>
+        <button onclick="cm3(1)"><i class="ti ti-chevron-right"></i></button>
+      </div>
+      <div class="sch-cal-grid" id="tsch-cal"></div>
     </div>
   </div>
 </div>
@@ -377,7 +392,7 @@ function jSwitch(tab){
 function tSwitch(tab){
   ['requests','absence','schedule'].forEach(t=>{ gs('ttab-'+t).classList.toggle('active',t===tab); gs('tpane-'+t).classList.toggle('active',t===tab) });
   if(tab==='requests') loadAndRender(renderTReqs,'tutor-sync');
-  if(tab==='schedule') loadAndRender(renderTSch,'tutor-sync');
+  if(tab==='schedule'){ const n=new Date(); if(cY3===undefined){cY3=n.getFullYear();cM3=n.getMonth()} loadAndRender(renderTSch,'tutor-sync'); }
 }
 async function loadAndRender(fn,syncId){ setSyncLabel(syncId,'更新中...'); await loadData(); setSyncLabel(syncId,''); fn() }
 
@@ -629,32 +644,73 @@ function renderJSch(){
     </div>`).join('')+'</div>';
 }
 
+let cY3, cM3;
+function cm3(d){ cM3+=d; if(cM3>11){cM3=0;cY3++} if(cM3<0){cM3=11;cY3--} renderTSch() }
+
 function renderTSch(){
-  const c=gs('tsch-list');
-  let items=[];
+  // 月が未初期化なら今月にセット
+  if(cY3===undefined){ const n=new Date(); cY3=n.getFullYear(); cM3=n.getMonth() }
+  gs('cal-lbl3').textContent=`${cY3}年${cM3+1}月`;
+
+  // この月の確定データを収集
+  const byDate={};
   Object.entries(requests).forEach(([date,tutors])=>{
+    if(!date.startsWith(`${cY3}-${String(cM3+1).padStart(2,'0')}`)) return;
     const sl=tutors[currentTutor]; if(!sl) return;
     Object.entries(sl).forEach(([slot,entry])=>{
       const status=entry?.status||entry;
       const location=entry?.location||'';
-      if(status==='accepted') items.push({date,slot,location,type:'work'});
+      if(status==='accepted'){
+        if(!byDate[date]) byDate[date]=[];
+        byDate[date].push({slot,location,type:'work'});
+      }
     });
   });
   Object.entries(absences).forEach(([date,tutors])=>{
+    if(!date.startsWith(`${cY3}-${String(cM3+1).padStart(2,'0')}`)) return;
     const sl=tutors[currentTutor]; if(!sl) return;
     Object.entries(sl).forEach(([slot,status])=>{
-      if(status==='absence-accepted') items.push({date,slot,location:'',type:'abs'});
+      if(status==='absence-accepted'){
+        if(!byDate[date]) byDate[date]=[];
+        byDate[date].push({slot,location:'',type:'abs'});
+      }
     });
   });
-  items.sort((a,b)=>a.date.localeCompare(b.date)||a.slot.localeCompare(b.slot));
-  if(!items.length){ c.innerHTML='<div class="empty">確定済みの予定はありません</div>'; return }
-  c.innerHTML='<div class="sch-list">'+items.map(it=>`
-    <div class="sch-item">
-      <span class="sch-date">${fd(it.date)}</span>
-      <span class="sch-time">${it.slot}</span>
-      ${it.location?`<span class="sch-loc">${it.location}</span>`:''}
-      <span class="sch-badge ${it.type==='work'?'sb-work':'sb-abs'}">${it.type==='work'?'勤務':'欠勤'}</span>
-    </div>`).join('')+'</div>';
+
+  const g=gs('tsch-cal'); g.innerHTML='';
+  ['日','月','火','水','木','金','土'].forEach(d=>{
+    const e=document.createElement('div'); e.className='sch-cal-dow'; e.textContent=d; g.appendChild(e);
+  });
+
+  const today=new Date(); today.setHours(0,0,0,0);
+  const first=new Date(cY3,cM3,1).getDay();
+  for(let i=0;i<first;i++){
+    const e=document.createElement('div'); e.className='sch-cal-day empty'; g.appendChild(e);
+  }
+  const days=new Date(cY3,cM3+1,0).getDate();
+  for(let d=1;d<=days;d++){
+    const k=dk(cY3,cM3,d);
+    const e=document.createElement('div'); e.className='sch-cal-day';
+    const thisDay=new Date(cY3,cM3,d);
+    if(thisDay.getTime()===today.getTime()) e.classList.add('today');
+
+    const num=document.createElement('div'); num.className='scd-num'; num.textContent=d;
+    e.appendChild(num);
+
+    if(byDate[k]){
+      byDate[k].sort((a,b)=>a.slot.localeCompare(b.slot)).forEach(it=>{
+        const tag=document.createElement('div');
+        tag.className='sch-cal-entry '+(it.type==='work'?'sce-work':'sce-abs');
+        // 時間を短縮表示（例：9:00〜10:30 → 9:00-）
+        const shortTime=it.slot.replace('〜','–').replace(/:00/g,'');
+        tag.textContent=it.type==='work'
+          ? `${shortTime} ${it.location}`
+          : `${shortTime} 欠勤`;
+        e.appendChild(tag);
+      });
+    }
+    g.appendChild(e);
+  }
 }
 </script>
 </body>
