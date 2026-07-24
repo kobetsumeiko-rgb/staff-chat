@@ -698,7 +698,10 @@ function renderTSch(){
     e.appendChild(num);
 
     if(byDate[k]){
-      byDate[k].sort((a,b)=>a.slot.localeCompare(b.slot)).forEach(it=>{
+      byDate[k].sort((a,b)=>{
+        const t=s=>{ const[h,m]=s.split('〜')[0].split(':'); return parseInt(h)*60+parseInt(m) };
+        return t(a.slot)-t(b.slot);
+      }).forEach(it=>{
         const tag=document.createElement('div');
         tag.className='sch-cal-entry '+(it.type==='work'?'sce-work':'sce-abs');
         // 時間を短縮表示（例：9:00〜10:30 → 9:00-）
