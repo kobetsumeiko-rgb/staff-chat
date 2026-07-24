@@ -127,7 +127,9 @@ select{padding:8px 12px;border:1px solid #ddd;border-radius:8px;background:#fff;
 .sch-cal-day.empty{background:transparent;border-color:transparent}
 .sch-cal-day .scd-num{font-size:10px;font-weight:700;color:#888;margin-bottom:1px;line-height:1}
 .sch-cal-day.today .scd-num{color:#fff;background:#1a1a1a;border-radius:99px;width:16px;height:16px;display:flex;align-items:center;justify-content:center}
-.sch-cal-entry{font-size:9px;border-radius:3px;padding:1px 2px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.sch-cal-entry{font-size:9px;border-radius:3px;padding:1px 2px;line-height:1.3;display:flex;flex-direction:column;align-items:flex-start;overflow:hidden}
+.sch-cal-entry .sct{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;width:100%}
+.sch-cal-entry .scl{font-weight:700;white-space:nowrap}
 .sce-work{background:#EAF3DE;color:#1a3a08}
 .sce-abs{background:#FBEAF0;color:#4B1528}
 
@@ -704,11 +706,10 @@ function renderTSch(){
       }).forEach(it=>{
         const tag=document.createElement('div');
         tag.className='sch-cal-entry '+(it.type==='work'?'sce-work':'sce-abs');
-        // 時間を短縮表示（例：9:00〜10:30 → 9:00-）
         const shortTime=it.slot.split('〜')[0];
-        tag.textContent=it.type==='work'
-          ? `${shortTime} ${it.location}`
-          : `${shortTime} 欠勤`;
+        const locShort={'屋代':'屋','安茂里':'安','青木島':'青'}[it.location]||it.location;
+        const locLabel=it.type==='work'?locShort:'欠';
+        tag.innerHTML=`<span class="sct">${shortTime}</span><span class="scl">${locLabel}</span>`;
         e.appendChild(tag);
       });
     }
