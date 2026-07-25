@@ -562,6 +562,19 @@ function renderTAbsSlots(){
       badge.className='slot-status '+(status==='absence-pending'?'ss-ab-pending':'ss-ab-accepted');
       badge.textContent=status==='absence-pending'?'申請中':'承認済み';
       row.appendChild(badge);
+      const cancelBtn=document.createElement('button');
+      cancelBtn.className='btn'; cancelBtn.style.cssText='padding:4px 10px;font-size:11px;color:#888;border-color:#ddd';
+      cancelBtn.innerHTML='<i class="ti ti-trash" style="font-size:12px"></i> 取消';
+      cancelBtn.onclick=async()=>{
+        if(!confirm('欠勤申請を取り消しますか？')) return;
+        await loadData();
+        delete absences[tDate][currentTutor][s];
+        if(Object.keys(absences[tDate][currentTutor]).length===0) delete absences[tDate][currentTutor];
+        if(Object.keys(absences[tDate]||{}).length===0) delete absences[tDate];
+        await saveAbsences(); renderTAbsSlots(); renderCal2();
+        toast('欠勤申請を取り消しました');
+      };
+      row.appendChild(cancelBtn);
     } else {
       const chk=document.createElement('input'); chk.type='checkbox'; chk.className='abs-chk';
       chk.checked=tSel.has(s);
@@ -662,16 +675,31 @@ function renderJAbs(){
         const lbl=status==='absence-accepted'?'承認済み':'申請中';
         const bc=status==='absence-accepted'?'accepted':'ab-pending';
         item.innerHTML=`<div class="ri-top"><span class="ri-label">${tutor}　${fd(date)}　${slot}</span><span class="badge ${bc}">${lbl}</span></div>`;
+        const row=document.createElement('div'); row.className='btn-row';
         if(status==='absence-pending'){
-          const row=document.createElement('div'); row.className='btn-row';
           const ba=document.createElement('button'); ba.className='btn success'; ba.innerHTML='<i class="ti ti-check"></i> 承認';
           ba.onclick=async()=>{
             await loadData();
             absences[date][tutor][slot]='absence-accepted';
             await saveAbsences(); renderJAbs(); toast(`${tutor}の欠勤を承認しました`);
           };
-          row.appendChild(ba); item.appendChild(row);
+          row.appendChild(ba);
         }
+        // 取り消しボタン（申請中・承認済みどちらも）
+        const cancelBtn=document.createElement('button');
+        cancelBtn.className='btn'; cancelBtn.style.cssText='padding:4px 10px;font-size:11px;color:#888;border-color:#ddd';
+        cancelBtn.innerHTML='<i class="ti ti-trash" style="font-size:12px"></i> 取消';
+        cancelBtn.onclick=async()=>{
+          if(!confirm(`${tutor}の欠勤申請を取り消しますか？`)) return;
+          await loadData();
+          delete absences[date][tutor][slot];
+          if(Object.keys(absences[date][tutor]).length===0) delete absences[date][tutor];
+          if(Object.keys(absences[date]||{}).length===0) delete absences[date];
+          await saveAbsences(); renderJAbs();
+          toast('欠勤申請を取り消しました');
+        };
+        row.appendChild(cancelBtn);
+        item.appendChild(row);
         c.appendChild(item);
       });
     });
