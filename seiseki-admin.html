@@ -205,8 +205,8 @@
     <div class="data-block">
       <h3>過去データの一括取り込み：定期テスト成績</h3>
       <p class="hint">1行1件、カンマ区切り。識別番号が新規の場合は自動で生徒が作成されます。項目内にカンマは使わないでください。</p>
-      <pre class="fmt">識別番号,中学校名,テスト名,実施日(YYYY-MM-DD),5科目合計点
-S001,〇〇中学校,1学期期末テスト,2025-07-10,412</pre>
+      <pre class="fmt">識別番号,中学校名,西暦,実施月,5科目合計点
+S001,〇〇中学校,2025,7,412</pre>
       <textarea id="testImportArea"></textarea>
       <div class="btn-row"><button class="btn primary" id="testImportBtn">取り込む</button></div>
       <div id="testImportMsg" class="import-msg"></div>
@@ -215,8 +215,8 @@ S001,〇〇中学校,1学期期末テスト,2025-07-10,412</pre>
     <div class="data-block">
       <h3>過去データの一括取り込み：模試成績</h3>
       <p class="hint">1行1件。回(1〜4)、点数のあとに「志望校名,判定」を最大4組まで続けられます（判定はA〜E）。</p>
-      <pre class="fmt">識別番号,回(1-4),実施日,5科目合計点,志望校1,判定1,志望校2,判定2
-S001,1,2025-08-20,388,〇〇高校,B,△△高校,A</pre>
+      <pre class="fmt">識別番号,回(1-4),西暦,実施月,5科目合計点,志望校1,判定1,志望校2,判定2
+S001,1,2025,8,388,〇〇高校,B,△△高校,A</pre>
       <textarea id="mockImportArea"></textarea>
       <div class="btn-row"><button class="btn primary" id="mockImportBtn">取り込む</button></div>
       <div id="mockImportMsg" class="import-msg"></div>
@@ -264,7 +264,7 @@ function blankStudent(){
     label: '',
     defaultJuniorHigh: '',
     tests: [],
-    mocks: [1,2,3,4].map(n => ({ order:n, date:'', score:'', judgments:[] })),
+    mocks: [1,2,3,4].map(n => ({ order:n, year:'', month:'', score:'', judgments:[] })),
     results: []
   };
 }
@@ -370,7 +370,7 @@ function renderStudentDetail(){
     <section class="block">
       <h3>定期テスト成績</h3>
       <table class="rows" id="testsTable">
-        <thead><tr><th style="width:22%">中学校名</th><th style="width:26%">テスト名</th><th style="width:16%">実施日</th><th style="width:14%">5科目合計点</th><th></th></tr></thead>
+        <thead><tr><th style="width:32%">中学校名</th><th style="width:14%">西暦</th><th style="width:14%">実施月</th><th style="width:16%">5科目合計点</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
       <button class="btn small" id="addTestBtn" style="margin-top:8px;">＋ テストを追加</button>
@@ -404,7 +404,7 @@ function renderStudentDetail(){
 
   renderTestsTable(s);
   document.getElementById('addTestBtn').addEventListener('click', ()=>{
-    s.tests.push({ id:uid(), juniorHigh:s.defaultJuniorHigh||'', testName:'', date:'', score:'' });
+    s.tests.push({ id:uid(), juniorHigh:s.defaultJuniorHigh||'', year:'', month:'', score:'' });
     scheduleSave(); renderTestsTable(s);
   });
 
@@ -422,8 +422,8 @@ function renderTestsTable(s){
   tbody.innerHTML = s.tests.map(t=>`
     <tr data-id="${t.id}">
       <td><input type="text" class="jh" value="${escapeAttr(t.juniorHigh)}" placeholder="〇〇中学校"></td>
-      <td><input type="text" class="tn" value="${escapeAttr(t.testName)}" placeholder="1学期期末テスト"></td>
-      <td class="date-cell"><input type="date" class="td-date" value="${escapeAttr(t.date)}"></td>
+      <td class="num-cell"><input type="number" class="yr" value="${escapeAttr(t.year)}" placeholder="例:2025"></td>
+      <td class="num-cell"><input type="number" class="mo" min="1" max="12" value="${escapeAttr(t.month)}" placeholder="例:7"></td>
       <td class="num-cell"><input type="number" class="sc" value="${escapeAttr(t.score)}" placeholder="例:412"></td>
       <td><button class="icon-btn del">✕</button></td>
     </tr>`).join('') || '<tr><td colspan="5" style="color:var(--ink-soft);padding:12px 8px;">まだテストが登録されていません。</td></tr>';
@@ -432,8 +432,8 @@ function renderTestsTable(s){
     const id = tr.dataset.id;
     const t = s.tests.find(x=>x.id===id);
     tr.querySelector('.jh').addEventListener('input', e=>{ t.juniorHigh=e.target.value; scheduleSave(); });
-    tr.querySelector('.tn').addEventListener('input', e=>{ t.testName=e.target.value; scheduleSave(); });
-    tr.querySelector('.td-date').addEventListener('input', e=>{ t.date=e.target.value; scheduleSave(); });
+    tr.querySelector('.yr').addEventListener('input', e=>{ t.year=e.target.value; scheduleSave(); });
+    tr.querySelector('.mo').addEventListener('input', e=>{ t.month=e.target.value; scheduleSave(); });
     tr.querySelector('.sc').addEventListener('input', e=>{ t.score=e.target.value; scheduleSave(); });
     tr.querySelector('.del').addEventListener('click', ()=>{ s.tests=s.tests.filter(x=>x.id!==id); scheduleSave(); renderTestsTable(s); });
   });
@@ -466,7 +466,8 @@ function renderMockGrid(s){
     <div class="mock-card" data-order="${m.order}">
       <h4>第${m.order}回模試</h4>
       <div class="score-line">
-        <input type="date" class="m-date" value="${escapeAttr(m.date)}">
+        <input type="number" class="m-year" style="width:64px;" value="${escapeAttr(m.year)}" placeholder="西暦">
+        <input type="number" class="m-month" min="1" max="12" style="width:50px;" value="${escapeAttr(m.month)}" placeholder="月">
         <input type="number" class="m-score" value="${escapeAttr(m.score)}" placeholder="5科目合計点">
       </div>
       <div class="judg-list"></div>
@@ -477,7 +478,8 @@ function renderMockGrid(s){
   grid.querySelectorAll('.mock-card').forEach(card=>{
     const order = Number(card.dataset.order);
     const m = s.mocks.find(x=>x.order===order);
-    card.querySelector('.m-date').addEventListener('input', e=>{ m.date=e.target.value; scheduleSave(); });
+    card.querySelector('.m-year').addEventListener('input', e=>{ m.year=e.target.value; scheduleSave(); });
+    card.querySelector('.m-month').addEventListener('input', e=>{ m.month=e.target.value; scheduleSave(); });
     card.querySelector('.m-score').addEventListener('input', e=>{ m.score=e.target.value; scheduleSave(); });
     renderJudgList(card, m, s);
     card.querySelector('.add-judg').addEventListener('click', ()=>{
@@ -571,23 +573,31 @@ function runAnalysis(){
   }
 }
 
+function ymKey(y,m){
+  const yn = Number(y), mn = Number(m);
+  return (y && m) ? yn*100+mn : Infinity;
+}
+function ymLabel(y,m){
+  return (y && m) ? `${y}年${m}月` : '-';
+}
+
 function studentAnalysisCard(s, idx, matchesSchool, isPass){
   const name = studentDisplayName(s, idx);
-  const testsRows = s.tests.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''))
-    .map(t=>`<tr><td>${escapeHtml(t.date||'-')}</td><td>${escapeHtml(t.juniorHigh||'-')}</td><td>${escapeHtml(t.testName||'-')}</td><td class="mono">${escapeHtml(String(t.score||'-'))}</td></tr>`).join('');
-  const mockRows = s.mocks.map(m=>{
+  const testsRows = s.tests.slice().sort((a,b)=>ymKey(a.year,a.month)-ymKey(b.year,b.month))
+    .map(t=>`<tr><td>${escapeHtml(ymLabel(t.year,t.month))}</td><td>${escapeHtml(t.juniorHigh||'-')}</td><td class="mono">${escapeHtml(String(t.score||'-'))}</td></tr>`).join('');
+  const mockRows = s.mocks.slice().sort((a,b)=>ymKey(a.year,a.month)-ymKey(b.year,b.month)).map(m=>{
     const j = m.judgments.find(x=>matchesSchool(x.highSchool));
     const rankHtml = j ? `<span class="rank-badge" style="background:${RANK_COLOR[j.rank]}22;color:${RANK_COLOR[j.rank]};">${j.rank}</span>` : '-';
-    return `<tr><td>第${m.order}回</td><td>${escapeHtml(m.date||'-')}</td><td class="mono">${escapeHtml(String(m.score||'-'))}</td><td>${rankHtml}</td></tr>`;
+    return `<tr><td>${escapeHtml(ymLabel(m.year,m.month))}</td><td class="mono">${escapeHtml(String(m.score||'-'))}</td><td>${rankHtml}</td></tr>`;
   }).join('');
   return `<div class="student-analysis-card">
     <h4>${escapeHtml(name)} <span class="chip ${isPass?'pass':'fail'}" style="margin-left:8px;">${isPass?'合格':'不合格'}</span></h4>
     <table class="mini-table">
-      <thead><tr><th>実施日</th><th>中学校</th><th>テスト名</th><th>5科目合計</th></tr></thead>
-      <tbody>${testsRows || '<tr><td colspan="4" style="color:var(--ink-soft);">記録なし</td></tr>'}</tbody>
+      <thead><tr><th>実施年月</th><th>中学校</th><th>5科目合計</th></tr></thead>
+      <tbody>${testsRows || '<tr><td colspan="3" style="color:var(--ink-soft);">記録なし</td></tr>'}</tbody>
     </table>
     <table class="mini-table">
-      <thead><tr><th>模試</th><th>実施日</th><th>5科目合計</th><th>当該校 判定</th></tr></thead>
+      <thead><tr><th>実施年月</th><th>5科目合計</th><th>当該校 判定</th></tr></thead>
       <tbody>${mockRows}</tbody>
     </table>
   </div>`;
@@ -633,10 +643,10 @@ document.getElementById('testImportBtn').addEventListener('click', ()=>{
     const rows = parseCsvLines(document.getElementById('testImportArea').value);
     let count=0;
     rows.forEach(cols=>{
-      const [label, juniorHigh, testName, date, score] = cols;
+      const [label, juniorHigh, year, month, score] = cols;
       if(!label) return;
       const s = findOrCreateByLabel(label);
-      s.tests.push({ id:uid(), juniorHigh:juniorHigh||'', testName:testName||'', date:date||'', score:score||'' });
+      s.tests.push({ id:uid(), juniorHigh:juniorHigh||'', year:year||'', month:month||'', score:score||'' });
       count++;
     });
     scheduleSave(); renderStudentList(); renderStudentDetail();
@@ -650,13 +660,13 @@ document.getElementById('mockImportBtn').addEventListener('click', ()=>{
     const rows = parseCsvLines(document.getElementById('mockImportArea').value);
     let count=0;
     rows.forEach(cols=>{
-      const [label, orderStr, date, score, ...rest] = cols;
+      const [label, orderStr, year, month, score, ...rest] = cols;
       if(!label) return;
       const order = Number(orderStr);
       if(![1,2,3,4].includes(order)) return;
       const s = findOrCreateByLabel(label);
       const m = s.mocks.find(x=>x.order===order);
-      m.date = date||''; m.score = score||'';
+      m.year = year||''; m.month = month||''; m.score = score||'';
       const judgments = [];
       for(let i=0;i<rest.length;i+=2){
         const hs = rest[i], rk = (rest[i+1]||'').toUpperCase();
