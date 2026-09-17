@@ -177,13 +177,8 @@ function runAnalysis(){
     return;
   }
 
-  const showId = 'sf_' + Math.random().toString(36).slice(2);
-  const toggleHtml = failed.length>0
-    ? `<div class="toggle-line"><label><input type="checkbox" id="${showId}"> 不合格だった生徒（n=${failed.length}）も含めて表示する</label></div>`
-    : '';
-
-  box.innerHTML = `<h3 style="margin-bottom:4px;">「${escapeHtml(q)}」合格者（n=${passed.length}）の成績</h3>
-    ${toggleHtml}
+  box.innerHTML = `<h3 style="margin-bottom:4px;">「${escapeHtml(q)}」の成績（合格 n=${passed.length}・不合格 n=${failed.length}）</h3>
+    <p class="toggle-line" style="margin-bottom:16px;">白い枠＝合格者、<span style="color:var(--fail);">赤い枠＝不合格者</span>の記録です。</p>
     <div class="month-section">
       <h3>内申点</h3>
       <div id="naishintenBox"></div>
@@ -244,10 +239,7 @@ function runAnalysis(){
     }).join('');
   }
 
-  renderMonths(false);
-  if(failed.length>0){
-    document.getElementById(showId).addEventListener('change', e=>{ renderMonths(e.target.checked); });
-  }
+  renderMonths(true);
 }
 
 /* ---------- 生徒一覧（閲覧） ---------- */
@@ -279,15 +271,15 @@ function renderBrowseDetail(id){
     const judgs = m.judgments.map(j=>`<span class="rank-badge" style="background:${RANK_COLOR[j.rank]}22;color:${RANK_COLOR[j.rank]};margin-right:4px;" title="${escapeHtml(j.highSchool)}">${j.rank}</span> ${escapeHtml(j.highSchool)}`).join('<br>') || '-';
     return `<tr><td>${escapeHtml(ymLabel(m.year,m.month))}</td><td class="mono">${escapeHtml(String(m.score||'-'))}</td><td>${judgs}</td></tr>`;
   }).join('');
-  const resultRows = s.results.map(r=>`<tr><td>${escapeHtml(r.highSchool)}</td><td>${r.result}</td></tr>`).join('');
+  const resultRows = s.results.map(r=>`<tr><td>${escapeHtml(r.highSchool)}</td><td>${r.result}</td><td>${escapeHtml(r.selectionType||'-')}</td></tr>`).join('');
   box.innerHTML = `<div class="student-card">
     <h4>${escapeHtml(studentDisplayName(s,idx))}${s.naishinten?` <span class="chip" style="background:var(--accent-bg);color:var(--accent);">内申${escapeHtml(String(s.naishinten))}</span>`:''}</h4>
     <table class="mini-table"><thead><tr><th>実施年月</th><th>中学校</th><th>5科目合計</th></tr></thead>
       <tbody>${testsRows || '<tr><td colspan="3" class="empty">記録なし</td></tr>'}</tbody></table>
     <table class="mini-table"><thead><tr><th>実施年月</th><th>5科目合計</th><th>志望校判定</th></tr></thead>
       <tbody>${mockRows}</tbody></table>
-    <table class="mini-table"><thead><tr><th>高校名</th><th>結果</th></tr></thead>
-      <tbody>${resultRows || '<tr><td colspan="2" class="empty">記録なし</td></tr>'}</tbody></table>
+    <table class="mini-table"><thead><tr><th>高校名</th><th>結果</th><th>選抜区分</th></tr></thead>
+      <tbody>${resultRows || '<tr><td colspan="3" class="empty">記録なし</td></tr>'}</tbody></table>
   </div>`;
 }
 
