@@ -105,11 +105,11 @@ const SCHOOLS = [
   '長野高校','屋代高校（理数）','屋代高校（普通）','長野吉田高校','長野西高校（国際）','長野西高校（普通）',
   '篠ノ井高校','市立長野高校','長野東高校','長野南高校','松代高校','屋代南高校',
   '須坂創成高校（商業/工学）','須坂創成高校（園芸）','更級農業高校','長野高専',
-  '長野工業高校（電気）','長野工業高校（情報）','長野工業高校（物質）','長野工業高校（建築）','長野工業高校（機械）','長野工業高校（土木）',
+  '長野工業高校（電気）','長野工業高校（情報）','長野工業高校（物質）','長野工業高校（建築）','長野工業高校（機械）','長野工業高校（土木）','長野商業高校',
   '上田高校','須坂高校','長野日大高校（特進）','長野日大高校（進学）',
   '文化学園長野高校（特選）','文化学園長野高校（特進）','文化学園長野高校（進学）',
   '上田西高校（特進）','上田西高校（進学）','長野清泉女学院（特進）','長野清泉女学院（進学）',
-  '長野俊英（アドバンス・セレクト）','長野商業'
+  '長野俊英（アドバンス・セレクト）'
 ];
 const TEST_MONTHS = [8,9,10,11,12,1,2];
 const MOCK_MONTHS = [10,11,12,1];
@@ -271,15 +271,15 @@ function renderBrowseDetail(id){
     const judgs = m.judgments.map(j=>`<span class="rank-badge" style="background:${RANK_COLOR[j.rank]}22;color:${RANK_COLOR[j.rank]};margin-right:4px;" title="${escapeHtml(j.highSchool)}">${j.rank}</span> ${escapeHtml(j.highSchool)}`).join('<br>') || '-';
     return `<tr><td>${escapeHtml(ymLabel(m.year,m.month))}</td><td class="mono">${escapeHtml(String(m.score||'-'))}</td><td>${judgs}</td></tr>`;
   }).join('');
-  const resultRows = s.results.map(r=>`<tr><td>${escapeHtml(r.highSchool)}</td><td>${r.result}</td><td>${escapeHtml(r.selectionType||'-')}</td></tr>`).join('');
+  const resultRows = s.results.map(r=>`<tr><td>${escapeHtml(r.highSchool)}</td><td>${r.result}</td><td>${escapeHtml(r.selectionType||'-')}</td><td>${escapeHtml(r.club||'-')}</td></tr>`).join('');
   box.innerHTML = `<div class="student-card">
     <h4>${escapeHtml(studentDisplayName(s,idx))}${s.naishinten?` <span class="chip" style="background:var(--accent-bg);color:var(--accent);">内申${escapeHtml(String(s.naishinten))}</span>`:''}</h4>
     <table class="mini-table"><thead><tr><th>実施年月</th><th>中学校</th><th>5科目合計</th></tr></thead>
       <tbody>${testsRows || '<tr><td colspan="3" class="empty">記録なし</td></tr>'}</tbody></table>
     <table class="mini-table"><thead><tr><th>実施年月</th><th>5科目合計</th><th>志望校判定</th></tr></thead>
       <tbody>${mockRows}</tbody></table>
-    <table class="mini-table"><thead><tr><th>高校名</th><th>結果</th><th>選抜区分</th></tr></thead>
-      <tbody>${resultRows || '<tr><td colspan="3" class="empty">記録なし</td></tr>'}</tbody></table>
+    <table class="mini-table"><thead><tr><th>高校名</th><th>結果</th><th>選抜区分</th><th>部活</th></tr></thead>
+      <tbody>${resultRows || '<tr><td colspan="4" class="empty">記録なし</td></tr>'}</tbody></table>
   </div>`;
 }
 
