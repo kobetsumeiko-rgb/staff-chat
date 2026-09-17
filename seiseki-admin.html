@@ -120,8 +120,8 @@
   .mock-card .score-line{ display:flex; align-items:center; gap:8px; margin-bottom:10px; }
   .mock-card .score-line input{ width:90px; }
   .judg-row{ display:flex; gap:6px; align-items:center; margin-bottom:6px; }
-  .judg-row input[type=text]{ flex:1; min-width:0; }
-  .judg-row select{ width:56px; }
+  .judg-row select.j-school{ flex:1; min-width:0; }
+  .judg-row select.j-rank{ width:56px; flex:none; }
   .rank-badge{ display:inline-block; width:22px; text-align:center; border-radius:5px; font-weight:700; font-size:12px; padding:1px 0; }
 
   /* analysis tab */
@@ -181,7 +181,9 @@
 
   <section id="tab-analysis" class="tab-panel">
     <div class="search-bar">
-      <input type="text" id="schoolSearch" placeholder="高校名を入力（例：〇〇高校）">
+      <select id="schoolSearch" style="flex:1;">
+        <option value="">高校名を選択してください</option>
+      </select>
       <button class="btn primary" id="searchBtn">分析する</button>
     </div>
     <div id="analysisResult"></div>
@@ -249,6 +251,19 @@ let saveTimer = null;
 
 const RANKS = ['A','B','C','D','E'];
 const RANK_COLOR = {A:'#1F7A5C',B:'#5B8C5A',C:'#C08A2E',D:'#C9743D',E:'#AF3F3C'};
+const SCHOOLS = [
+  '長野高校','屋代高校（理数）','屋代高校（普通）','長野吉田高校','長野西高校（国際）','長野西高校（普通）',
+  '篠ノ井高校','市立長野高校','長野東高校','長野南高校','松代高校','屋代南高校',
+  '須坂創成高校（商業/工学）','須坂創成高校（園芸）','更級農業高校','長野高専',
+  '長野工業高校（電気）','長野工業高校（情報）','長野工業高校（物質）','長野工業高校（建築）','長野工業高校（機械）','長野工業高校（土木）',
+  '上田高校','須坂高校','長野日大高校（特進）','長野日大高校（進学）',
+  '文化学園長野高校（特選）','文化学園長野高校（特進）','文化学園長野高校（進学）',
+  '上田西高校（特進）','上田西高校（進学）','長野清泉女学院（特進）','長野清泉女学院（進学）',
+  '長野俊英（アドバンス・セレクト）','長野商業'
+];
+function schoolOptions(selected){
+  return '<option value="">選択してください</option>' + SCHOOLS.map(sc=>`<option value="${escapeAttr(sc)}" ${sc===selected?'selected':''}>${escapeHtml(sc)}</option>`).join('');
+}
 
 function uid(){ return crypto.randomUUID(); }
 
@@ -443,7 +458,7 @@ function renderResultsTable(s){
   const tbody = document.querySelector('#resultsTable tbody');
   tbody.innerHTML = s.results.map(r=>`
     <tr data-id="${r.id}">
-      <td><input type="text" class="hs" value="${escapeAttr(r.highSchool)}" placeholder="〇〇高校"></td>
+      <td><select class="hs">${schoolOptions(r.highSchool)}</select></td>
       <td><select class="res">
         <option value="合格" ${r.result==='合格'?'selected':''}>合格</option>
         <option value="不合格" ${r.result==='不合格'?'selected':''}>不合格</option>
@@ -454,7 +469,7 @@ function renderResultsTable(s){
   tbody.querySelectorAll('tr[data-id]').forEach(tr=>{
     const id = tr.dataset.id;
     const r = s.results.find(x=>x.id===id);
-    tr.querySelector('.hs').addEventListener('input', e=>{ r.highSchool=e.target.value; scheduleSave(); renderStudentList(); });
+    tr.querySelector('.hs').addEventListener('change', e=>{ r.highSchool=e.target.value; scheduleSave(); renderStudentList(); });
     tr.querySelector('.res').addEventListener('change', e=>{ r.result=e.target.value; scheduleSave(); renderStudentList(); });
     tr.querySelector('.del').addEventListener('click', ()=>{ s.results=s.results.filter(x=>x.id!==id); scheduleSave(); renderResultsTable(s); renderStudentList(); });
   });
@@ -494,28 +509,29 @@ function renderJudgList(card, m, s){
   const list = card.querySelector('.judg-list');
   list.innerHTML = m.judgments.map(j=>`
     <div class="judg-row" data-id="${j.id}">
-      <input type="text" class="j-school" value="${escapeAttr(j.highSchool)}" placeholder="志望校名">
+      <select class="j-school">${schoolOptions(j.highSchool)}</select>
       <select class="j-rank">${RANKS.map(r=>`<option value="${r}" ${r===j.rank?'selected':''}>${r}</option>`).join('')}</select>
       <button class="icon-btn del">✕</button>
     </div>`).join('');
   list.querySelectorAll('.judg-row').forEach(row=>{
     const id = row.dataset.id;
     const j = m.judgments.find(x=>x.id===id);
-    row.querySelector('.j-school').addEventListener('input', e=>{ j.highSchool=e.target.value; scheduleSave(); });
+    row.querySelector('.j-school').addEventListener('change', e=>{ j.highSchool=e.target.value; scheduleSave(); });
     row.querySelector('.j-rank').addEventListener('change', e=>{ j.rank=e.target.value; scheduleSave(); });
     row.querySelector('.del').addEventListener('click', ()=>{ m.judgments=m.judgments.filter(x=>x.id!==id); scheduleSave(); renderMockGrid(s); });
   });
 }
 
 /* ---------- Analysis tab ---------- */
+document.getElementById('schoolSearch').innerHTML = schoolOptions('');
 document.getElementById('searchBtn').addEventListener('click', runAnalysis);
-document.getElementById('schoolSearch').addEventListener('keydown', e=>{ if(e.key==='Enter') runAnalysis(); });
+document.getElementById('schoolSearch').addEventListener('change', runAnalysis);
 
 function runAnalysis(){
   const q = document.getElementById('schoolSearch').value.trim();
   const box = document.getElementById('analysisResult');
   if(!q){ box.innerHTML = ''; return; }
-  const matchesSchool = (name) => name && name.includes(q);
+  const matchesSchool = (name) => name === q;
 
   const passed = students.filter(s => s.results.some(r => r.result==='合格' && matchesSchool(r.highSchool)));
   const failed = students.filter(s => s.results.some(r => r.result==='不合格' && matchesSchool(r.highSchool)) && !passed.includes(s));
