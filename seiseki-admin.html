@@ -278,6 +278,7 @@ function blankStudent(){
     id: uid(),
     label: '',
     defaultJuniorHigh: '',
+    naishinten: '',
     tests: [],
     mocks: [1,2,3,4].map(n => ({ order:n, year:'', month:'', score:'', judgments:[] })),
     results: []
@@ -379,6 +380,8 @@ function renderStudentDetail(){
       <input type="text" id="f-label" value="${escapeAttr(s.label)}" placeholder="例：S001（任意・氏名は入力しないでください）" style="width:220px;">
       <label style="margin-left:14px;">主な中学校名</label>
       <input type="text" id="f-defaultJH" value="${escapeAttr(s.defaultJuniorHigh)}" placeholder="新規テスト行の初期値として使用" style="width:180px;">
+      <label style="margin-left:14px;">内申点</label>
+      <input type="number" id="f-naishinten" value="${escapeAttr(s.naishinten)}" placeholder="例:38" style="width:80px;">
       <button class="btn danger" style="margin-left:auto;" id="deleteStudentBtn">この生徒を削除</button>
     </div>
 
@@ -409,6 +412,7 @@ function renderStudentDetail(){
 
   document.getElementById('f-label').addEventListener('input', e=>{ s.label = e.target.value; scheduleSave(); renderStudentList(); });
   document.getElementById('f-defaultJH').addEventListener('input', e=>{ s.defaultJuniorHigh = e.target.value; scheduleSave(); });
+  document.getElementById('f-naishinten').addEventListener('input', e=>{ s.naishinten = e.target.value; scheduleSave(); });
   document.getElementById('deleteStudentBtn').addEventListener('click', ()=>{
     if(confirm('この生徒のデータを削除します。よろしいですか？')){
       students = students.filter(st=>st.id!==s.id);
@@ -607,7 +611,7 @@ function studentAnalysisCard(s, idx, matchesSchool, isPass){
     return `<tr><td>${escapeHtml(ymLabel(m.year,m.month))}</td><td class="mono">${escapeHtml(String(m.score||'-'))}</td><td>${rankHtml}</td></tr>`;
   }).join('');
   return `<div class="student-analysis-card">
-    <h4>${escapeHtml(name)} <span class="chip ${isPass?'pass':'fail'}" style="margin-left:8px;">${isPass?'合格':'不合格'}</span></h4>
+    <h4>${escapeHtml(name)} <span class="chip ${isPass?'pass':'fail'}" style="margin-left:8px;">${isPass?'合格':'不合格'}</span>${s.naishinten?` <span class="chip" style="background:var(--accent-bg);color:var(--accent);">内申${escapeHtml(String(s.naishinten))}</span>`:''}</h4>
     <table class="mini-table">
       <thead><tr><th>実施年月</th><th>中学校</th><th>5科目合計</th></tr></thead>
       <tbody>${testsRows || '<tr><td colspan="3" style="color:var(--ink-soft);">記録なし</td></tr>'}</tbody>
