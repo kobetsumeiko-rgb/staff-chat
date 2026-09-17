@@ -124,7 +124,14 @@ document.querySelectorAll('nav.tabs button').forEach(btn=>{
 function escapeHtml(str){
   return String(str==null?'':str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
-function studentDisplayName(s, idx){ return s.label && s.label.trim() ? s.label.trim() : ('生徒 #' + (idx+1)); }
+function studentDisplayName(s, idx){ return '生徒' + (idx+1); }
+function ymKey(y,m){
+  const yn = Number(y), mn = Number(m);
+  return (y && m) ? yn*100+mn : Infinity;
+}
+function ymLabel(y,m){
+  return (y && m) ? `${y}年${m}月` : '-';
+}
 
 /* ---------- 高校別に調べる ---------- */
 document.getElementById('searchBtn').addEventListener('click', runAnalysis);
@@ -158,12 +165,12 @@ function runAnalysis(){
     return `<div class="stat-card"><div class="label">第${o}回模試（合格者 n=${arr.length}）</div><div class="value">平均${avg}点</div><div style="font-size:11.5px;color:var(--ink-soft);margin-top:2px;">範囲 ${min}〜${max}点</div></div>`;
   }).join('');
 
-  const passCards = passed.map(s=>studentCard(s, students.indexOf(s), matchesSchool, true)).join('');
+  const passCards = passed.map((s,i)=>studentCard(s, i, matchesSchool, true)).join('');
   const showId = 'sf_' + Math.random().toString(36).slice(2);
   let failedHtml = '';
   if(failed.length>0){
     failedHtml = `<div class="toggle-line"><label><input type="checkbox" id="${showId}"> 不合格だった生徒（n=${failed.length}）も表示する</label></div>
-      <div id="failedCards" style="display:none;">${failed.map(s=>studentCard(s, students.indexOf(s), matchesSchool, false)).join('')}</div>`;
+      <div id="failedCards" style="display:none;">${failed.map((s,i)=>studentCard(s, i, matchesSchool, false)).join('')}</div>`;
   }
 
   box.innerHTML = `<h3 style="margin-bottom:12px;">「${escapeHtml(q)}」合格者の模試成績推移</h3>
@@ -178,18 +185,18 @@ function runAnalysis(){
 
 function studentCard(s, idx, matchesSchool, isPass){
   const name = studentDisplayName(s, idx);
-  const testsRows = s.tests.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''))
-    .map(t=>`<tr><td>${escapeHtml(t.date||'-')}</td><td>${escapeHtml(t.juniorHigh||'-')}</td><td>${escapeHtml(t.testName||'-')}</td><td class="mono">${escapeHtml(String(t.score||'-'))}</td></tr>`).join('');
-  const mockRows = s.mocks.map(m=>{
+  const testsRows = s.tests.slice().sort((a,b)=>ymKey(a.year,a.month)-ymKey(b.year,b.month))
+    .map(t=>`<tr><td>${escapeHtml(ymLabel(t.year,t.month))}</td><td>${escapeHtml(t.juniorHigh||'-')}</td><td class="mono">${escapeHtml(String(t.score||'-'))}</td></tr>`).join('');
+  const mockRows = s.mocks.slice().sort((a,b)=>ymKey(a.year,a.month)-ymKey(b.year,b.month)).map(m=>{
     const j = m.judgments.find(x=>matchesSchool(x.highSchool));
     const rankHtml = j ? `<span class="rank-badge" style="background:${RANK_COLOR[j.rank]}22;color:${RANK_COLOR[j.rank]};">${j.rank}</span>` : '-';
-    return `<tr><td>第${m.order}回</td><td>${escapeHtml(m.date||'-')}</td><td class="mono">${escapeHtml(String(m.score||'-'))}</td><td>${rankHtml}</td></tr>`;
+    return `<tr><td>${escapeHtml(ymLabel(m.year,m.month))}</td><td class="mono">${escapeHtml(String(m.score||'-'))}</td><td>${rankHtml}</td></tr>`;
   }).join('');
   return `<div class="student-card">
     <h4>${escapeHtml(name)}<span class="chip ${isPass?'pass':'fail'}">${isPass?'合格':'不合格'}</span></h4>
-    <table class="mini-table"><thead><tr><th>実施日</th><th>中学校</th><th>テスト名</th><th>5科目合計</th></tr></thead>
-      <tbody>${testsRows || '<tr><td colspan="4" class="empty">記録なし</td></tr>'}</tbody></table>
-    <table class="mini-table"><thead><tr><th>模試</th><th>実施日</th><th>5科目合計</th><th>当該校 判定</th></tr></thead>
+    <table class="mini-table"><thead><tr><th>実施年月</th><th>中学校</th><th>5科目合計</th></tr></thead>
+      <tbody>${testsRows || '<tr><td colspan="3" class="empty">記録なし</td></tr>'}</tbody></table>
+    <table class="mini-table"><thead><tr><th>実施年月</th><th>5科目合計</th><th>当該校 判定</th></tr></thead>
       <tbody>${mockRows}</tbody></table>
   </div>`;
 }
@@ -217,18 +224,18 @@ function renderBrowseDetail(id){
   const s = students[idx];
   const box = document.getElementById('browseDetail');
   if(!s){ box.innerHTML=''; return; }
-  const testsRows = s.tests.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''))
-    .map(t=>`<tr><td>${escapeHtml(t.date||'-')}</td><td>${escapeHtml(t.juniorHigh||'-')}</td><td>${escapeHtml(t.testName||'-')}</td><td class="mono">${escapeHtml(String(t.score||'-'))}</td></tr>`).join('');
-  const mockRows = s.mocks.map(m=>{
+  const testsRows = s.tests.slice().sort((a,b)=>ymKey(a.year,a.month)-ymKey(b.year,b.month))
+    .map(t=>`<tr><td>${escapeHtml(ymLabel(t.year,t.month))}</td><td>${escapeHtml(t.juniorHigh||'-')}</td><td class="mono">${escapeHtml(String(t.score||'-'))}</td></tr>`).join('');
+  const mockRows = s.mocks.slice().sort((a,b)=>ymKey(a.year,a.month)-ymKey(b.year,b.month)).map(m=>{
     const judgs = m.judgments.map(j=>`<span class="rank-badge" style="background:${RANK_COLOR[j.rank]}22;color:${RANK_COLOR[j.rank]};margin-right:4px;" title="${escapeHtml(j.highSchool)}">${j.rank}</span> ${escapeHtml(j.highSchool)}`).join('<br>') || '-';
-    return `<tr><td>第${m.order}回</td><td>${escapeHtml(m.date||'-')}</td><td class="mono">${escapeHtml(String(m.score||'-'))}</td><td>${judgs}</td></tr>`;
+    return `<tr><td>${escapeHtml(ymLabel(m.year,m.month))}</td><td class="mono">${escapeHtml(String(m.score||'-'))}</td><td>${judgs}</td></tr>`;
   }).join('');
   const resultRows = s.results.map(r=>`<tr><td>${escapeHtml(r.highSchool)}</td><td>${r.result}</td></tr>`).join('');
   box.innerHTML = `<div class="student-card">
     <h4>${escapeHtml(studentDisplayName(s,idx))}</h4>
-    <table class="mini-table"><thead><tr><th>実施日</th><th>中学校</th><th>テスト名</th><th>5科目合計</th></tr></thead>
-      <tbody>${testsRows || '<tr><td colspan="4" class="empty">記録なし</td></tr>'}</tbody></table>
-    <table class="mini-table"><thead><tr><th>模試</th><th>実施日</th><th>5科目合計</th><th>志望校判定</th></tr></thead>
+    <table class="mini-table"><thead><tr><th>実施年月</th><th>中学校</th><th>5科目合計</th></tr></thead>
+      <tbody>${testsRows || '<tr><td colspan="3" class="empty">記録なし</td></tr>'}</tbody></table>
+    <table class="mini-table"><thead><tr><th>実施年月</th><th>5科目合計</th><th>志望校判定</th></tr></thead>
       <tbody>${mockRows}</tbody></table>
     <table class="mini-table"><thead><tr><th>高校名</th><th>結果</th></tr></thead>
       <tbody>${resultRows || '<tr><td colspan="2" class="empty">記録なし</td></tr>'}</tbody></table>
