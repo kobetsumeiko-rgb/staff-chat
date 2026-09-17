@@ -51,6 +51,14 @@
   .toggle-line{ font-size:13px; color:var(--ink-soft); margin-bottom:10px; }
   .empty{ color:var(--ink-soft); padding:20px 4px; }
 
+  .month-section{ margin-bottom:26px; }
+  .month-section h3{ font-size:15px; margin-bottom:10px; }
+  .month-block{ background:var(--surface); border:1px solid var(--line-soft); border-radius:8px; padding:10px 14px; margin-bottom:8px; }
+  .month-block .m-label{ font-size:12.5px; color:var(--ink-soft); margin-bottom:6px; }
+  .score-chip-list{ display:flex; flex-wrap:wrap; gap:6px; }
+  .score-chip{ background:var(--paper); border:1px solid var(--line); border-radius:6px; padding:4px 9px; font-family:'IBM Plex Mono',monospace; font-size:13px; }
+  .score-chip.fail{ border-color:var(--fail-bg); color:var(--fail); background:var(--fail-bg); }
+
   /* browse tab */
   .student-list{ display:grid; gap:10px; }
   .list-item{ background:var(--surface); border:1px solid var(--line-soft); border-radius:8px; padding:10px 14px; cursor:pointer; }
@@ -72,7 +80,9 @@
 
   <section id="tab-analysis" class="tab-panel active">
     <div class="search-bar">
-      <input type="text" id="schoolSearch" placeholder="高校名を入力（例：〇〇高校）">
+      <select id="schoolSearch" style="flex:1;">
+        <option value="">高校名を選択してください</option>
+      </select>
       <button class="btn" id="searchBtn">調べる</button>
     </div>
     <div id="analysisResult"></div>
@@ -91,6 +101,18 @@ const API_BASE = 'https://highschoolpassdata.kobetsu-meiko.workers.dev';
 let students = [];
 const RANKS = ['A','B','C','D','E'];
 const RANK_COLOR = {A:'#1F7A5C',B:'#5B8C5A',C:'#C08A2E',D:'#C9743D',E:'#AF3F3C'};
+const SCHOOLS = [
+  '長野高校','屋代高校（理数）','屋代高校（普通）','長野吉田高校','長野西高校（国際）','長野西高校（普通）',
+  '篠ノ井高校','市立長野高校','長野東高校','長野南高校','松代高校','屋代南高校',
+  '須坂創成高校（商業/工学）','須坂創成高校（園芸）','更級農業高校','長野高専',
+  '長野工業高校（電気）','長野工業高校（情報）','長野工業高校（物質）','長野工業高校（建築）','長野工業高校（機械）','長野工業高校（土木）',
+  '上田高校','須坂高校','長野日大高校（特進）','長野日大高校（進学）',
+  '文化学園長野高校（特選）','文化学園長野高校（特進）','文化学園長野高校（進学）',
+  '上田西高校（特進）','上田西高校（進学）','長野清泉女学院（特進）','長野清泉女学院（進学）',
+  '長野俊英（アドバンス・セレクト）','長野商業'
+];
+const TEST_MONTHS = [8,9,10,11,12,1,2];
+const MOCK_MONTHS = [10,11,12,1];
 
 function setSyncStatus(state, text){
   const el = document.getElementById('syncStatus');
@@ -134,71 +156,84 @@ function ymLabel(y,m){
 }
 
 /* ---------- 高校別に調べる ---------- */
+document.getElementById('schoolSearch').innerHTML =
+  '<option value="">高校名を選択してください</option>' +
+  SCHOOLS.map(sc=>`<option value="${escapeHtml(sc)}">${escapeHtml(sc)}</option>`).join('');
+
 document.getElementById('searchBtn').addEventListener('click', runAnalysis);
-document.getElementById('schoolSearch').addEventListener('keydown', e=>{ if(e.key==='Enter') runAnalysis(); });
+document.getElementById('schoolSearch').addEventListener('change', runAnalysis);
 
 function runAnalysis(){
-  const q = document.getElementById('schoolSearch').value.trim();
+  const q = document.getElementById('schoolSearch').value;
   const box = document.getElementById('analysisResult');
   if(!q){ box.innerHTML=''; return; }
-  const matchesSchool = (name) => name && name.includes(q);
+  const matchesSchool = (name) => name === q;
 
   const passed = students.filter(s => s.results.some(r => r.result==='合格' && matchesSchool(r.highSchool)));
   const failed = students.filter(s => s.results.some(r => r.result==='不合格' && matchesSchool(r.highSchool)) && !passed.includes(s));
 
   if(passed.length===0 && failed.length===0){
-    box.innerHTML = `<p class="empty">「${escapeHtml(q)}」を含む高校の結果を持つ生徒が見つかりませんでした。</p>`;
+    box.innerHTML = `<p class="empty">「${escapeHtml(q)}」の結果を持つ生徒が見つかりませんでした。</p>`;
     return;
   }
 
-  const perOrderScores = {1:[],2:[],3:[],4:[]};
-  passed.forEach(s=>{
-    s.mocks.forEach(m=>{
-      const j = m.judgments.find(x=>matchesSchool(x.highSchool));
-      if(j && m.score!=='' && m.score!=null) perOrderScores[m.order].push(Number(m.score));
-    });
-  });
-  const statCards = [1,2,3,4].map(o=>{
-    const arr = perOrderScores[o];
-    if(arr.length===0) return `<div class="stat-card"><div class="label">第${o}回模試</div><div class="value" style="font-size:13px;color:var(--ink-soft);">データなし</div></div>`;
-    const min=Math.min(...arr), max=Math.max(...arr), avg=Math.round(arr.reduce((a,b)=>a+b,0)/arr.length);
-    return `<div class="stat-card"><div class="label">第${o}回模試（合格者 n=${arr.length}）</div><div class="value">平均${avg}点</div><div style="font-size:11.5px;color:var(--ink-soft);margin-top:2px;">範囲 ${min}〜${max}点</div></div>`;
-  }).join('');
-
-  const passCards = passed.map((s,i)=>studentCard(s, i, matchesSchool, true)).join('');
   const showId = 'sf_' + Math.random().toString(36).slice(2);
-  let failedHtml = '';
-  if(failed.length>0){
-    failedHtml = `<div class="toggle-line"><label><input type="checkbox" id="${showId}"> 不合格だった生徒（n=${failed.length}）も表示する</label></div>
-      <div id="failedCards" style="display:none;">${failed.map((s,i)=>studentCard(s, i, matchesSchool, false)).join('')}</div>`;
+  const toggleHtml = failed.length>0
+    ? `<div class="toggle-line"><label><input type="checkbox" id="${showId}"> 不合格だった生徒（n=${failed.length}）も含めて表示する</label></div>`
+    : '';
+
+  box.innerHTML = `<h3 style="margin-bottom:4px;">「${escapeHtml(q)}」合格者（n=${passed.length}）の成績</h3>
+    ${toggleHtml}
+    <div class="month-section">
+      <h3>定期テスト（月別）</h3>
+      <div id="testMonthBox"></div>
+    </div>
+    <div class="month-section">
+      <h3>模試（月別・${escapeHtml(q)}の判定）</h3>
+      <div id="mockMonthBox"></div>
+    </div>`;
+
+  function renderMonths(includeFailed){
+    const set = includeFailed ? passed.concat(failed) : passed;
+
+    const testBox = document.getElementById('testMonthBox');
+    testBox.innerHTML = TEST_MONTHS.map(mo=>{
+      const entries = [];
+      set.forEach(s=>{
+        const isPass = passed.includes(s);
+        s.tests.forEach(t=>{ if(Number(t.month)===mo && t.score!=='' && t.score!=null) entries.push({score:Number(t.score), isPass}); });
+      });
+      if(entries.length===0){
+        return `<div class="month-block"><div class="m-label">${mo}月</div><div class="empty" style="padding:0;">データなし</div></div>`;
+      }
+      const avg = Math.round(entries.reduce((a,b)=>a+b.score,0)/entries.length);
+      const chips = entries.map(e=>`<span class="score-chip ${e.isPass?'':'fail'}">${e.score}</span>`).join('');
+      return `<div class="month-block"><div class="m-label">${mo}月（n=${entries.length}・平均${avg}点）</div><div class="score-chip-list">${chips}</div></div>`;
+    }).join('');
+
+    const mockBox = document.getElementById('mockMonthBox');
+    mockBox.innerHTML = MOCK_MONTHS.map(mo=>{
+      const entries = [];
+      set.forEach(s=>{
+        const isPass = passed.includes(s);
+        s.mocks.forEach(m=>{
+          const j = m.judgments.find(x=>matchesSchool(x.highSchool));
+          if(j && Number(m.month)===mo && m.score!=='' && m.score!=null) entries.push({score:Number(m.score), rank:j.rank, isPass});
+        });
+      });
+      if(entries.length===0){
+        return `<div class="month-block"><div class="m-label">${mo}月</div><div class="empty" style="padding:0;">データなし</div></div>`;
+      }
+      const avg = Math.round(entries.reduce((a,b)=>a+b.score,0)/entries.length);
+      const chips = entries.map(e=>`<span class="score-chip ${e.isPass?'':'fail'}">${e.score}点<span class="rank-badge" style="background:${RANK_COLOR[e.rank]}22;color:${RANK_COLOR[e.rank]};margin-left:4px;">${e.rank}</span></span>`).join('');
+      return `<div class="month-block"><div class="m-label">${mo}月（n=${entries.length}・平均${avg}点）</div><div class="score-chip-list">${chips}</div></div>`;
+    }).join('');
   }
 
-  box.innerHTML = `<h3 style="margin-bottom:12px;">「${escapeHtml(q)}」合格者の模試成績推移</h3>
-    <div class="stat-cards">${statCards}</div>${passCards}${failedHtml}`;
-
+  renderMonths(false);
   if(failed.length>0){
-    document.getElementById(showId).addEventListener('change', e=>{
-      document.getElementById('failedCards').style.display = e.target.checked ? 'block' : 'none';
-    });
+    document.getElementById(showId).addEventListener('change', e=>{ renderMonths(e.target.checked); });
   }
-}
-
-function studentCard(s, idx, matchesSchool, isPass){
-  const name = studentDisplayName(s, idx);
-  const testsRows = s.tests.slice().sort((a,b)=>ymKey(a.year,a.month)-ymKey(b.year,b.month))
-    .map(t=>`<tr><td>${escapeHtml(ymLabel(t.year,t.month))}</td><td>${escapeHtml(t.juniorHigh||'-')}</td><td class="mono">${escapeHtml(String(t.score||'-'))}</td></tr>`).join('');
-  const mockRows = s.mocks.slice().sort((a,b)=>ymKey(a.year,a.month)-ymKey(b.year,b.month)).map(m=>{
-    const j = m.judgments.find(x=>matchesSchool(x.highSchool));
-    const rankHtml = j ? `<span class="rank-badge" style="background:${RANK_COLOR[j.rank]}22;color:${RANK_COLOR[j.rank]};">${j.rank}</span>` : '-';
-    return `<tr><td>${escapeHtml(ymLabel(m.year,m.month))}</td><td class="mono">${escapeHtml(String(m.score||'-'))}</td><td>${rankHtml}</td></tr>`;
-  }).join('');
-  return `<div class="student-card">
-    <h4>${escapeHtml(name)}<span class="chip ${isPass?'pass':'fail'}">${isPass?'合格':'不合格'}</span></h4>
-    <table class="mini-table"><thead><tr><th>実施年月</th><th>中学校</th><th>5科目合計</th></tr></thead>
-      <tbody>${testsRows || '<tr><td colspan="3" class="empty">記録なし</td></tr>'}</tbody></table>
-    <table class="mini-table"><thead><tr><th>実施年月</th><th>5科目合計</th><th>当該校 判定</th></tr></thead>
-      <tbody>${mockRows}</tbody></table>
-  </div>`;
 }
 
 /* ---------- 生徒一覧（閲覧） ---------- */
