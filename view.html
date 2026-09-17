@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>生徒成績台帳（閲覧用）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,700&family=IBM+Plex+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EEF1F6; --surface:#FFFFFF; --ink:#1C2541; --ink-soft:#5B6478;
+    --line:#CBD2E0; --line-soft:#E3E7EF;
+    --pass:#1F7A5C; --pass-bg:#E4F2EC; --fail:#AF3F3C; --fail-bg:#F6E7E6;
+    --accent:#C08A2E; --accent-bg:#F6EEDD; --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--paper); color:var(--ink); font-family:'IBM Plex Sans JP', sans-serif; font-size:15px; line-height:1.6; }
+  h1,h2,h3,h4{ font-family:'Source Serif 4', serif; font-weight:700; margin:0; }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+  #app{ max-width:1100px; margin:0 auto; padding:0 18px 60px; }
+  header.top{ padding:26px 4px 16px; border-bottom:1px solid var(--line); }
+  header.top h1{ font-size:21px; }
+  header.top .sub{ color:var(--ink-soft); font-size:13px; margin-top:4px; }
+  .sync-status{ font-size:12px; color:var(--ink-soft); margin-top:10px; }
+  .sync-status.err{ color:var(--fail); }
+
+  nav.tabs{ display:flex; gap:4px; margin:16px 0 20px; border-bottom:1px solid var(--line); }
+  nav.tabs button{ appearance:none; border:none; background:none; cursor:pointer; padding:10px 16px; font-size:14px; color:var(--ink-soft); font-family:inherit; border-bottom:2px solid transparent; margin-bottom:-1px; }
+  nav.tabs button.active{ color:var(--ink); border-bottom-color:var(--accent); font-weight:600; }
+  .tab-panel{ display:none; } .tab-panel.active{ display:block; }
+
+  .search-bar{ display:flex; gap:8px; margin-bottom:22px; }
+  .search-bar input{ flex:1; font-size:16px; padding:11px 14px; border:1px solid var(--line); border-radius:8px; font-family:inherit; }
+  button.btn{ font-family:inherit; font-size:14px; font-weight:600; cursor:pointer; border:1px solid var(--ink); background:var(--ink); color:#fff; padding:10px 18px; border-radius:8px; }
+
+  .stat-cards{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:24px; }
+  .stat-card{ background:var(--surface); border:1px solid var(--line-soft); border-radius:8px; padding:12px 14px; }
+  .stat-card .label{ font-size:11.5px; color:var(--ink-soft); margin-bottom:4px; }
+  .stat-card .value{ font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:600; }
+
+  .student-card{ background:var(--surface); border:1px solid var(--line-soft); border-radius:var(--radius); padding:16px 18px; margin-bottom:14px; }
+  .student-card h4{ font-size:14px; margin-bottom:10px; }
+  .chip{ font-size:10.5px; padding:1px 7px; border-radius:20px; font-weight:600; margin-left:8px; }
+  .chip.pass{ background:var(--pass-bg); color:var(--pass); }
+  .chip.fail{ background:var(--fail-bg); color:var(--fail); }
+  .mini-table{ width:100%; border-collapse:collapse; font-size:13px; margin-bottom:10px; }
+  .mini-table th{ text-align:left; color:var(--ink-soft); font-weight:600; padding:4px 6px; border-bottom:1px solid var(--line); font-size:11px; }
+  .mini-table td{ padding:4px 6px; border-bottom:1px solid var(--line-soft); }
+  .rank-badge{ display:inline-block; width:22px; text-align:center; border-radius:5px; font-weight:700; font-size:12px; padding:1px 0; }
+  .toggle-line{ font-size:13px; color:var(--ink-soft); margin-bottom:10px; }
+  .empty{ color:var(--ink-soft); padding:20px 4px; }
+
+  /* browse tab */
+  .student-list{ display:grid; gap:10px; }
+  .list-item{ background:var(--surface); border:1px solid var(--line-soft); border-radius:8px; padding:10px 14px; cursor:pointer; }
+  .list-item .name{ font-weight:600; font-size:14px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <h1>生徒成績台帳（閲覧用）</h1>
+    <div class="sub">高校名を入力すると、その高校の合格ラインの目安を確認できます</div>
+    <div id="syncStatus" class="sync-status">読み込み中…</div>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="analysis" class="active">高校別に調べる</button>
+    <button data-tab="browse">生徒一覧（閲覧）</button>
+  </nav>
+
+  <section id="tab-analysis" class="tab-panel active">
+    <div class="search-bar">
+      <input type="text" id="schoolSearch" placeholder="高校名を入力（例：〇〇高校）">
+      <button class="btn" id="searchBtn">調べる</button>
+    </div>
+    <div id="analysisResult"></div>
+  </section>
+
+  <section id="tab-browse" class="tab-panel">
+    <div id="browseList" class="student-list"></div>
+    <div id="browseDetail" style="margin-top:18px;"></div>
+  </section>
+</div>
+
+<script>
+// ここをデプロイしたCloudflare WorkerのURLに書き換えてください（末尾のスラッシュなし）
+const API_BASE = 'https://highschoolpassdata.kobetsu-meiko.workers.dev';
+
+let students = [];
+const RANKS = ['A','B','C','D','E'];
+const RANK_COLOR = {A:'#1F7A5C',B:'#5B8C5A',C:'#C08A2E',D:'#C9743D',E:'#AF3F3C'};
+
+function setSyncStatus(state, text){
+  const el = document.getElementById('syncStatus');
+  el.className = 'sync-status ' + (state||'');
+  el.textContent = text;
+}
+
+async function loadData(){
+  setSyncStatus('', '読み込み中…');
+  try{
+    const res = await fetch(API_BASE + '/api/students');
+    if(!res.ok) throw new Error('サーバーエラー: ' + res.status);
+    students = await res.json();
+    setSyncStatus('', '');
+    renderBrowseList();
+  }catch(e){
+    setSyncStatus('err', '読み込みに失敗しました。ネットワーク環境を確認してください。');
+    console.error(e);
+  }
+}
+
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+  });
+});
+
+function escapeHtml(str){
+  return String(str==null?'':str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function studentDisplayName(s, idx){ return s.label && s.label.trim() ? s.label.trim() : ('生徒 #' + (idx+1)); }
+
+/* ---------- 高校別に調べる ---------- */
+document.getElementById('searchBtn').addEventListener('click', runAnalysis);
+document.getElementById('schoolSearch').addEventListener('keydown', e=>{ if(e.key==='Enter') runAnalysis(); });
+
+function runAnalysis(){
+  const q = document.getElementById('schoolSearch').value.trim();
+  const box = document.getElementById('analysisResult');
+  if(!q){ box.innerHTML=''; return; }
+  const matchesSchool = (name) => name && name.includes(q);
+
+  const passed = students.filter(s => s.results.some(r => r.result==='合格' && matchesSchool(r.highSchool)));
+  const failed = students.filter(s => s.results.some(r => r.result==='不合格' && matchesSchool(r.highSchool)) && !passed.includes(s));
+
+  if(passed.length===0 && failed.length===0){
+    box.innerHTML = `<p class="empty">「${escapeHtml(q)}」を含む高校の結果を持つ生徒が見つかりませんでした。</p>`;
+    return;
+  }
+
+  const perOrderScores = {1:[],2:[],3:[],4:[]};
+  passed.forEach(s=>{
+    s.mocks.forEach(m=>{
+      const j = m.judgments.find(x=>matchesSchool(x.highSchool));
+      if(j && m.score!=='' && m.score!=null) perOrderScores[m.order].push(Number(m.score));
+    });
+  });
+  const statCards = [1,2,3,4].map(o=>{
+    const arr = perOrderScores[o];
+    if(arr.length===0) return `<div class="stat-card"><div class="label">第${o}回模試</div><div class="value" style="font-size:13px;color:var(--ink-soft);">データなし</div></div>`;
+    const min=Math.min(...arr), max=Math.max(...arr), avg=Math.round(arr.reduce((a,b)=>a+b,0)/arr.length);
+    return `<div class="stat-card"><div class="label">第${o}回模試（合格者 n=${arr.length}）</div><div class="value">平均${avg}点</div><div style="font-size:11.5px;color:var(--ink-soft);margin-top:2px;">範囲 ${min}〜${max}点</div></div>`;
+  }).join('');
+
+  const passCards = passed.map(s=>studentCard(s, students.indexOf(s), matchesSchool, true)).join('');
+  const showId = 'sf_' + Math.random().toString(36).slice(2);
+  let failedHtml = '';
+  if(failed.length>0){
+    failedHtml = `<div class="toggle-line"><label><input type="checkbox" id="${showId}"> 不合格だった生徒（n=${failed.length}）も表示する</label></div>
+      <div id="failedCards" style="display:none;">${failed.map(s=>studentCard(s, students.indexOf(s), matchesSchool, false)).join('')}</div>`;
+  }
+
+  box.innerHTML = `<h3 style="margin-bottom:12px;">「${escapeHtml(q)}」合格者の模試成績推移</h3>
+    <div class="stat-cards">${statCards}</div>${passCards}${failedHtml}`;
+
+  if(failed.length>0){
+    document.getElementById(showId).addEventListener('change', e=>{
+      document.getElementById('failedCards').style.display = e.target.checked ? 'block' : 'none';
+    });
+  }
+}
+
+function studentCard(s, idx, matchesSchool, isPass){
+  const name = studentDisplayName(s, idx);
+  const testsRows = s.tests.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''))
+    .map(t=>`<tr><td>${escapeHtml(t.date||'-')}</td><td>${escapeHtml(t.juniorHigh||'-')}</td><td>${escapeHtml(t.testName||'-')}</td><td class="mono">${escapeHtml(String(t.score||'-'))}</td></tr>`).join('');
+  const mockRows = s.mocks.map(m=>{
+    const j = m.judgments.find(x=>matchesSchool(x.highSchool));
+    const rankHtml = j ? `<span class="rank-badge" style="background:${RANK_COLOR[j.rank]}22;color:${RANK_COLOR[j.rank]};">${j.rank}</span>` : '-';
+    return `<tr><td>第${m.order}回</td><td>${escapeHtml(m.date||'-')}</td><td class="mono">${escapeHtml(String(m.score||'-'))}</td><td>${rankHtml}</td></tr>`;
+  }).join('');
+  return `<div class="student-card">
+    <h4>${escapeHtml(name)}<span class="chip ${isPass?'pass':'fail'}">${isPass?'合格':'不合格'}</span></h4>
+    <table class="mini-table"><thead><tr><th>実施日</th><th>中学校</th><th>テスト名</th><th>5科目合計</th></tr></thead>
+      <tbody>${testsRows || '<tr><td colspan="4" class="empty">記録なし</td></tr>'}</tbody></table>
+    <table class="mini-table"><thead><tr><th>模試</th><th>実施日</th><th>5科目合計</th><th>当該校 判定</th></tr></thead>
+      <tbody>${mockRows}</tbody></table>
+  </div>`;
+}
+
+/* ---------- 生徒一覧（閲覧） ---------- */
+function renderBrowseList(){
+  const wrap = document.getElementById('browseList');
+  if(students.length===0){ wrap.innerHTML = '<div class="empty">データがありません。</div>'; return; }
+  wrap.innerHTML = students.map((s,idx)=>{
+    const passCount = s.results.filter(r=>r.result==='合格').length;
+    const failCount = s.results.filter(r=>r.result==='不合格').length;
+    return `<div class="list-item" data-id="${s.id}">
+      <span class="name">${escapeHtml(studentDisplayName(s,idx))}</span>
+      ${passCount?`<span class="chip pass">合${passCount}</span>`:''}
+      ${failCount?`<span class="chip fail">否${failCount}</span>`:''}
+    </div>`;
+  }).join('');
+  wrap.querySelectorAll('.list-item').forEach(item=>{
+    item.addEventListener('click', ()=> renderBrowseDetail(item.dataset.id));
+  });
+}
+
+function renderBrowseDetail(id){
+  const idx = students.findIndex(s=>s.id===id);
+  const s = students[idx];
+  const box = document.getElementById('browseDetail');
+  if(!s){ box.innerHTML=''; return; }
+  const testsRows = s.tests.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''))
+    .map(t=>`<tr><td>${escapeHtml(t.date||'-')}</td><td>${escapeHtml(t.juniorHigh||'-')}</td><td>${escapeHtml(t.testName||'-')}</td><td class="mono">${escapeHtml(String(t.score||'-'))}</td></tr>`).join('');
+  const mockRows = s.mocks.map(m=>{
+    const judgs = m.judgments.map(j=>`<span class="rank-badge" style="background:${RANK_COLOR[j.rank]}22;color:${RANK_COLOR[j.rank]};margin-right:4px;" title="${escapeHtml(j.highSchool)}">${j.rank}</span> ${escapeHtml(j.highSchool)}`).join('<br>') || '-';
+    return `<tr><td>第${m.order}回</td><td>${escapeHtml(m.date||'-')}</td><td class="mono">${escapeHtml(String(m.score||'-'))}</td><td>${judgs}</td></tr>`;
+  }).join('');
+  const resultRows = s.results.map(r=>`<tr><td>${escapeHtml(r.highSchool)}</td><td>${r.result}</td></tr>`).join('');
+  box.innerHTML = `<div class="student-card">
+    <h4>${escapeHtml(studentDisplayName(s,idx))}</h4>
+    <table class="mini-table"><thead><tr><th>実施日</th><th>中学校</th><th>テスト名</th><th>5科目合計</th></tr></thead>
+      <tbody>${testsRows || '<tr><td colspan="4" class="empty">記録なし</td></tr>'}</tbody></table>
+    <table class="mini-table"><thead><tr><th>模試</th><th>実施日</th><th>5科目合計</th><th>志望校判定</th></tr></thead>
+      <tbody>${mockRows}</tbody></table>
+    <table class="mini-table"><thead><tr><th>高校名</th><th>結果</th></tr></thead>
+      <tbody>${resultRows || '<tr><td colspan="2" class="empty">記録なし</td></tr>'}</tbody></table>
+  </div>`;
+}
+
+loadData();
+</script>
+</body>
+</html>

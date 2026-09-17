@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>生徒成績台帳</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,700&family=IBM+Plex+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EEF1F6;
+    --surface:#FFFFFF;
+    --ink:#1C2541;
+    --ink-soft:#5B6478;
+    --line:#CBD2E0;
+    --line-soft:#E3E7EF;
+    --pass:#1F7A5C;
+    --pass-bg:#E4F2EC;
+    --fail:#AF3F3C;
+    --fail-bg:#F6E7E6;
+    --accent:#C08A2E;
+    --accent-bg:#F6EEDD;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans JP', sans-serif;
+    font-size:14.5px;
+    line-height:1.6;
+  }
+  h1,h2,h3{ font-family:'Source Serif 4', serif; font-weight:700; margin:0; color:var(--ink); }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+  #app{ max-width:1240px; margin:0 auto; padding:0 20px 60px; }
+  header.top{
+    display:flex; align-items:baseline; justify-content:space-between;
+    padding:28px 4px 18px; border-bottom:1px solid var(--line);
+    flex-wrap:wrap; gap:10px;
+  }
+  header.top h1{ font-size:22px; letter-spacing:.01em; }
+  header.top .sub{ color:var(--ink-soft); font-size:13px; margin-top:4px; }
+  .sync-status{ font-size:12px; color:var(--ink-soft); white-space:nowrap; padding:4px 10px; border:1px solid var(--line); border-radius:20px; }
+  .sync-status.ok{ color:var(--pass); border-color:var(--pass-bg); background:var(--pass-bg); }
+  .sync-status.err{ color:var(--fail); border-color:var(--fail-bg); background:var(--fail-bg); }
+  .sync-status.busy{ color:var(--accent); border-color:var(--accent-bg); background:var(--accent-bg); }
+  nav.tabs{ display:flex; gap:4px; margin:18px 0 22px; border-bottom:1px solid var(--line); }
+  nav.tabs button{
+    appearance:none; border:none; background:none; cursor:pointer;
+    padding:10px 16px; font-size:14px; color:var(--ink-soft);
+    font-family:inherit; border-bottom:2px solid transparent; margin-bottom:-1px;
+  }
+  nav.tabs button.active{ color:var(--ink); border-bottom-color:var(--accent); font-weight:600; }
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; }
+
+  /* students tab layout */
+  .students-layout{ display:grid; grid-template-columns:280px 1fr; gap:20px; align-items:start; }
+  @media (max-width:820px){ .students-layout{ grid-template-columns:1fr; } }
+  .panel{ background:var(--surface); border:1px solid var(--line-soft); border-radius:var(--radius); }
+  .list-pane{ padding:14px; }
+  .list-pane .add-btn{ width:100%; margin-bottom:10px; }
+  .student-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:9px 10px; border-radius:8px; cursor:pointer; gap:8px;
+  }
+  .student-row:hover{ background:var(--paper); }
+  .student-row.selected{ background:var(--accent-bg); }
+  .student-row .name{ font-weight:600; font-size:13.5px; }
+  .student-row .chips{ display:flex; gap:4px; }
+  .chip{ font-size:10.5px; padding:1px 6px; border-radius:20px; font-weight:600; }
+  .chip.pass{ background:var(--pass-bg); color:var(--pass); }
+  .chip.fail{ background:var(--fail-bg); color:var(--fail); }
+  .empty-list{ color:var(--ink-soft); font-size:13px; padding:20px 8px; }
+
+  .detail-pane{ padding:22px 26px; min-height:400px; }
+  .detail-empty{ color:var(--ink-soft); padding:60px 10px; text-align:center; }
+
+  .field-row{ display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
+  .field-row label{ font-size:12.5px; color:var(--ink-soft); min-width:80px; }
+  input[type=text], input[type=date], input[type=number], select, textarea{
+    font-family:inherit; font-size:13.5px; padding:6px 9px;
+    border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--ink);
+  }
+  input:focus, select:focus, textarea:focus{ outline:2px solid var(--accent); outline-offset:0; border-color:var(--accent); }
+
+  section.block{ margin-top:26px; padding-top:20px; border-top:1px solid var(--line-soft); }
+  section.block h3{ font-size:15px; margin-bottom:12px; }
+  section.block .hint{ font-size:12px; color:var(--ink-soft); margin:-6px 0 12px; }
+
+  table.rows{ width:100%; border-collapse:collapse; }
+  table.rows th{ text-align:left; font-size:11.5px; color:var(--ink-soft); font-weight:600; padding:4px 8px; border-bottom:1px solid var(--line); }
+  table.rows td{ padding:5px 8px; border-bottom:1px solid var(--line-soft); vertical-align:middle; }
+  table.rows td input, table.rows td select{ width:100%; }
+  table.rows td.num-cell input{ width:80px; }
+  table.rows td.date-cell input{ width:140px; }
+  .icon-btn{
+    border:none; background:none; cursor:pointer; color:var(--fail); font-size:16px;
+    padding:2px 6px; border-radius:5px;
+  }
+  .icon-btn:hover{ background:var(--fail-bg); }
+
+  button.btn{
+    font-family:inherit; font-size:13px; font-weight:600; cursor:pointer;
+    border:1px solid var(--line); background:#fff; color:var(--ink);
+    padding:7px 13px; border-radius:7px;
+  }
+  button.btn:hover{ background:var(--paper); }
+  button.btn.primary{ background:var(--ink); color:#fff; border-color:var(--ink); }
+  button.btn.primary:hover{ background:#111a30; }
+  button.btn.danger{ color:var(--fail); border-color:var(--fail-bg); }
+  button.btn.danger:hover{ background:var(--fail-bg); }
+  button.btn.small{ padding:4px 9px; font-size:12px; }
+
+  .mock-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; }
+  .mock-card{ border:1px solid var(--line-soft); border-radius:8px; padding:12px 14px; background:var(--paper); }
+  .mock-card h4{ font-family:'Source Serif 4',serif; font-size:14px; margin:0 0 8px; }
+  .mock-card .score-line{ display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .mock-card .score-line input{ width:90px; }
+  .judg-row{ display:flex; gap:6px; align-items:center; margin-bottom:6px; }
+  .judg-row input[type=text]{ flex:1; min-width:0; }
+  .judg-row select{ width:56px; }
+  .rank-badge{ display:inline-block; width:22px; text-align:center; border-radius:5px; font-weight:700; font-size:12px; padding:1px 0; }
+
+  /* analysis tab */
+  .search-bar{ display:flex; gap:8px; margin-bottom:22px; }
+  .search-bar input{ flex:1; font-size:15px; padding:9px 12px; }
+  .stat-cards{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:24px; }
+  .stat-card{ background:var(--surface); border:1px solid var(--line-soft); border-radius:8px; padding:12px 14px; }
+  .stat-card .label{ font-size:11.5px; color:var(--ink-soft); margin-bottom:4px; }
+  .stat-card .value{ font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:600; }
+  .student-analysis-card{ background:var(--surface); border:1px solid var(--line-soft); border-radius:var(--radius); padding:16px 18px; margin-bottom:14px; }
+  .student-analysis-card h4{ font-size:14px; margin-bottom:10px; }
+  .mini-table{ width:100%; border-collapse:collapse; font-size:12.5px; margin-bottom:10px; }
+  .mini-table th{ text-align:left; color:var(--ink-soft); font-weight:600; padding:3px 6px; border-bottom:1px solid var(--line); font-size:11px; }
+  .mini-table td{ padding:3px 6px; border-bottom:1px solid var(--line-soft); }
+  .toggle-line{ font-size:12.5px; color:var(--ink-soft); margin-bottom:10px; }
+  .toggle-line label{ cursor:pointer; }
+
+  /* data tab */
+  .data-block{ background:var(--surface); border:1px solid var(--line-soft); border-radius:var(--radius); padding:18px 20px; margin-bottom:18px; }
+  .data-block h3{ font-size:15px; margin-bottom:6px; }
+  .data-block p.hint{ font-size:12.5px; color:var(--ink-soft); margin:0 0 10px; }
+  .data-block textarea{ width:100%; min-height:100px; font-family:'IBM Plex Mono',monospace; font-size:12px; }
+  .data-block pre.fmt{ background:var(--paper); padding:8px 10px; border-radius:6px; font-size:11.5px; overflow-x:auto; margin:0 0 10px; }
+  .btn-row{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  .import-msg{ font-size:12.5px; margin-top:8px; }
+  .import-msg.ok{ color:var(--pass); }
+  .import-msg.err{ color:var(--fail); }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <div>
+      <h1>生徒成績台帳</h1>
+      <div class="sub">定期テスト・模試・入試結果を記録し、高校別の合格ラインを分析します（生徒名は保存しません）</div>
+    </div>
+    <div id="syncStatus" class="sync-status">読み込み中…</div>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="students" class="active">生徒データ入力</button>
+    <button data-tab="analysis">高校別分析</button>
+    <button data-tab="data">データ管理</button>
+  </nav>
+
+  <section id="tab-students" class="tab-panel active">
+    <div class="students-layout">
+      <div class="panel list-pane">
+        <button class="btn primary add-btn" id="addStudentBtn">＋ 生徒を追加</button>
+        <div id="studentList"></div>
+      </div>
+      <div class="panel detail-pane" id="studentDetail">
+        <div class="detail-empty">左の一覧から生徒を選択するか、新しく追加してください。</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-analysis" class="tab-panel">
+    <div class="search-bar">
+      <input type="text" id="schoolSearch" placeholder="高校名を入力（例：〇〇高校）">
+      <button class="btn primary" id="searchBtn">分析する</button>
+    </div>
+    <div id="analysisResult"></div>
+  </section>
+
+  <section id="tab-data" class="tab-panel">
+    <div class="data-block">
+      <h3>バックアップ（書き出し・読み込み）</h3>
+      <p class="hint">全データをJSON形式で保存・復元します。定期的な書き出しをおすすめします。</p>
+      <div class="btn-row">
+        <button class="btn" id="exportJsonBtn">JSONを書き出す</button>
+      </div>
+      <p class="hint" style="margin-top:14px;">JSONを貼り付けて読み込む（既存データはIDが一致するものを上書き、新規は追加）：</p>
+      <textarea id="jsonImportArea" placeholder='[{"id":"...","label":"生徒A", ...}]'></textarea>
+      <div class="btn-row">
+        <button class="btn primary" id="jsonImportBtn">JSONを読み込む</button>
+      </div>
+      <div id="jsonImportMsg" class="import-msg"></div>
+    </div>
+
+    <div class="data-block">
+      <h3>過去データの一括取り込み：定期テスト成績</h3>
+      <p class="hint">1行1件、カンマ区切り。識別番号が新規の場合は自動で生徒が作成されます。項目内にカンマは使わないでください。</p>
+      <pre class="fmt">識別番号,中学校名,テスト名,実施日(YYYY-MM-DD),5科目合計点
+S001,〇〇中学校,1学期期末テスト,2025-07-10,412</pre>
+      <textarea id="testImportArea"></textarea>
+      <div class="btn-row"><button class="btn primary" id="testImportBtn">取り込む</button></div>
+      <div id="testImportMsg" class="import-msg"></div>
+    </div>
+
+    <div class="data-block">
+      <h3>過去データの一括取り込み：模試成績</h3>
+      <p class="hint">1行1件。回(1〜4)、点数のあとに「志望校名,判定」を最大4組まで続けられます（判定はA〜E）。</p>
+      <pre class="fmt">識別番号,回(1-4),実施日,5科目合計点,志望校1,判定1,志望校2,判定2
+S001,1,2025-08-20,388,〇〇高校,B,△△高校,A</pre>
+      <textarea id="mockImportArea"></textarea>
+      <div class="btn-row"><button class="btn primary" id="mockImportBtn">取り込む</button></div>
+      <div id="mockImportMsg" class="import-msg"></div>
+    </div>
+
+    <div class="data-block">
+      <h3>過去データの一括取り込み：入試結果</h3>
+      <pre class="fmt">識別番号,高校名,結果(合格/不合格)
+S001,〇〇高校,合格</pre>
+      <textarea id="resultImportArea"></textarea>
+      <div class="btn-row"><button class="btn primary" id="resultImportBtn">取り込む</button></div>
+      <div id="resultImportMsg" class="import-msg"></div>
+    </div>
+
+    <div class="data-block">
+      <h3 style="color:var(--fail);">全データ削除</h3>
+      <p class="hint">この操作は取り消せません。</p>
+      <div class="btn-row"><button class="btn danger" id="resetBtn">すべてのデータを削除する</button></div>
+    </div>
+  </section>
+</div>
+
+<script>
+// ここをデプロイしたCloudflare WorkerのURLに書き換えてください（末尾のスラッシュなし）
+const API_BASE = 'https://highschoolpassdata.kobetsu-meiko.workers.dev';
+
+let students = [];
+let currentStudentId = null;
+let saveTimer = null;
+
+const RANKS = ['A','B','C','D','E'];
+const RANK_COLOR = {A:'#1F7A5C',B:'#5B8C5A',C:'#C08A2E',D:'#C9743D',E:'#AF3F3C'};
+
+function uid(){ return crypto.randomUUID(); }
+
+function setSyncStatus(state, text){
+  const el = document.getElementById('syncStatus');
+  el.className = 'sync-status ' + (state||'');
+  el.textContent = text;
+}
+
+function blankStudent(){
+  return {
+    id: uid(),
+    label: '',
+    defaultJuniorHigh: '',
+    tests: [],
+    mocks: [1,2,3,4].map(n => ({ order:n, date:'', score:'', judgments:[] })),
+    results: []
+  };
+}
+
+async function loadData(){
+  setSyncStatus('busy', '読み込み中…');
+  try{
+    const res = await fetch(API_BASE + '/api/students');
+    if(!res.ok) throw new Error('サーバーエラー: ' + res.status);
+    students = await res.json();
+    setSyncStatus('ok', '同期済み');
+  }catch(e){
+    students = [];
+    setSyncStatus('err', '読み込み失敗（API_BASEの設定を確認してください）');
+    console.error(e);
+  }
+  renderStudentList();
+  renderStudentDetail();
+}
+
+function scheduleSave(){
+  clearTimeout(saveTimer);
+  setSyncStatus('busy', '保存中…');
+  saveTimer = setTimeout(async () => {
+    try{
+      const res = await fetch(API_BASE + '/api/students', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(students)
+      });
+      if(!res.ok) throw new Error('サーバーエラー: ' + res.status);
+      setSyncStatus('ok', '保存済み');
+    }catch(e){
+      setSyncStatus('err', '保存に失敗しました（通信環境を確認してください）');
+      console.error('保存に失敗しました', e);
+    }
+  }, 600);
+}
+
+function studentDisplayName(s, idx){
+  return s.label && s.label.trim() ? s.label.trim() : ('生徒 #' + (idx+1));
+}
+
+/* ---------- Tabs ---------- */
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* ---------- Student list ---------- */
+function renderStudentList(){
+  const wrap = document.getElementById('studentList');
+  if(students.length===0){
+    wrap.innerHTML = '<div class="empty-list">まだ生徒が登録されていません。</div>';
+    return;
+  }
+  wrap.innerHTML = students.map((s,idx)=>{
+    const passCount = s.results.filter(r=>r.result==='合格').length;
+    const failCount = s.results.filter(r=>r.result==='不合格').length;
+    return `<div class="student-row ${s.id===currentStudentId?'selected':''}" data-id="${s.id}">
+      <span class="name">${escapeHtml(studentDisplayName(s,idx))}</span>
+      <span class="chips">
+        ${passCount?`<span class="chip pass">合${passCount}</span>`:''}
+        ${failCount?`<span class="chip fail">否${failCount}</span>`:''}
+      </span>
+    </div>`;
+  }).join('');
+  wrap.querySelectorAll('.student-row').forEach(row=>{
+    row.addEventListener('click', ()=>{ currentStudentId = row.dataset.id; renderStudentList(); renderStudentDetail(); });
+  });
+}
+
+document.getElementById('addStudentBtn').addEventListener('click', ()=>{
+  const s = blankStudent();
+  students.push(s);
+  currentStudentId = s.id;
+  scheduleSave();
+  renderStudentList();
+  renderStudentDetail();
+});
+
+/* ---------- Student detail ---------- */
+function getCurrentStudent(){ return students.find(s=>s.id===currentStudentId); }
+
+function renderStudentDetail(){
+  const pane = document.getElementById('studentDetail');
+  const s = getCurrentStudent();
+  if(!s){ pane.innerHTML = '<div class="detail-empty">左の一覧から生徒を選択するか、新しく追加してください。</div>'; return; }
+
+  pane.innerHTML = `
+    <div class="field-row">
+      <label>識別番号</label>
+      <input type="text" id="f-label" value="${escapeAttr(s.label)}" placeholder="例：S001（任意・氏名は入力しないでください）" style="width:220px;">
+      <label style="margin-left:14px;">主な中学校名</label>
+      <input type="text" id="f-defaultJH" value="${escapeAttr(s.defaultJuniorHigh)}" placeholder="新規テスト行の初期値として使用" style="width:180px;">
+      <button class="btn danger" style="margin-left:auto;" id="deleteStudentBtn">この生徒を削除</button>
+    </div>
+
+    <section class="block">
+      <h3>定期テスト成績</h3>
+      <table class="rows" id="testsTable">
+        <thead><tr><th style="width:22%">中学校名</th><th style="width:26%">テスト名</th><th style="width:16%">実施日</th><th style="width:14%">5科目合計点</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <button class="btn small" id="addTestBtn" style="margin-top:8px;">＋ テストを追加</button>
+    </section>
+
+    <section class="block">
+      <h3>模試成績（4回分）</h3>
+      <p class="hint">各回ごとに5科目合計点と、志望校の合格判定（A〜E）を最大4校まで記録できます。</p>
+      <div class="mock-grid" id="mockGrid"></div>
+    </section>
+
+    <section class="block">
+      <h3>入試結果</h3>
+      <table class="rows" id="resultsTable">
+        <thead><tr><th style="width:60%">高校名</th><th style="width:25%">結果</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <button class="btn small" id="addResultBtn" style="margin-top:8px;">＋ 高校を追加</button>
+    </section>
+  `;
+
+  document.getElementById('f-label').addEventListener('input', e=>{ s.label = e.target.value; scheduleSave(); renderStudentList(); });
+  document.getElementById('f-defaultJH').addEventListener('input', e=>{ s.defaultJuniorHigh = e.target.value; scheduleSave(); });
+  document.getElementById('deleteStudentBtn').addEventListener('click', ()=>{
+    if(confirm('この生徒のデータを削除します。よろしいですか？')){
+      students = students.filter(st=>st.id!==s.id);
+      currentStudentId = null;
+      scheduleSave(); renderStudentList(); renderStudentDetail();
+    }
+  });
+
+  renderTestsTable(s);
+  document.getElementById('addTestBtn').addEventListener('click', ()=>{
+    s.tests.push({ id:uid(), juniorHigh:s.defaultJuniorHigh||'', testName:'', date:'', score:'' });
+    scheduleSave(); renderTestsTable(s);
+  });
+
+  renderMockGrid(s);
+
+  renderResultsTable(s);
+  document.getElementById('addResultBtn').addEventListener('click', ()=>{
+    s.results.push({ id:uid(), highSchool:'', result:'合格' });
+    scheduleSave(); renderResultsTable(s);
+  });
+}
+
+function renderTestsTable(s){
+  const tbody = document.querySelector('#testsTable tbody');
+  tbody.innerHTML = s.tests.map(t=>`
+    <tr data-id="${t.id}">
+      <td><input type="text" class="jh" value="${escapeAttr(t.juniorHigh)}" placeholder="〇〇中学校"></td>
+      <td><input type="text" class="tn" value="${escapeAttr(t.testName)}" placeholder="1学期期末テスト"></td>
+      <td class="date-cell"><input type="date" class="td-date" value="${escapeAttr(t.date)}"></td>
+      <td class="num-cell"><input type="number" class="sc" value="${escapeAttr(t.score)}" placeholder="例:412"></td>
+      <td><button class="icon-btn del">✕</button></td>
+    </tr>`).join('') || '<tr><td colspan="5" style="color:var(--ink-soft);padding:12px 8px;">まだテストが登録されていません。</td></tr>';
+
+  tbody.querySelectorAll('tr[data-id]').forEach(tr=>{
+    const id = tr.dataset.id;
+    const t = s.tests.find(x=>x.id===id);
+    tr.querySelector('.jh').addEventListener('input', e=>{ t.juniorHigh=e.target.value; scheduleSave(); });
+    tr.querySelector('.tn').addEventListener('input', e=>{ t.testName=e.target.value; scheduleSave(); });
+    tr.querySelector('.td-date').addEventListener('input', e=>{ t.date=e.target.value; scheduleSave(); });
+    tr.querySelector('.sc').addEventListener('input', e=>{ t.score=e.target.value; scheduleSave(); });
+    tr.querySelector('.del').addEventListener('click', ()=>{ s.tests=s.tests.filter(x=>x.id!==id); scheduleSave(); renderTestsTable(s); });
+  });
+}
+
+function renderResultsTable(s){
+  const tbody = document.querySelector('#resultsTable tbody');
+  tbody.innerHTML = s.results.map(r=>`
+    <tr data-id="${r.id}">
+      <td><input type="text" class="hs" value="${escapeAttr(r.highSchool)}" placeholder="〇〇高校"></td>
+      <td><select class="res">
+        <option value="合格" ${r.result==='合格'?'selected':''}>合格</option>
+        <option value="不合格" ${r.result==='不合格'?'selected':''}>不合格</option>
+      </select></td>
+      <td><button class="icon-btn del">✕</button></td>
+    </tr>`).join('') || '<tr><td colspan="3" style="color:var(--ink-soft);padding:12px 8px;">まだ結果が登録されていません。</td></tr>';
+
+  tbody.querySelectorAll('tr[data-id]').forEach(tr=>{
+    const id = tr.dataset.id;
+    const r = s.results.find(x=>x.id===id);
+    tr.querySelector('.hs').addEventListener('input', e=>{ r.highSchool=e.target.value; scheduleSave(); renderStudentList(); });
+    tr.querySelector('.res').addEventListener('change', e=>{ r.result=e.target.value; scheduleSave(); renderStudentList(); });
+    tr.querySelector('.del').addEventListener('click', ()=>{ s.results=s.results.filter(x=>x.id!==id); scheduleSave(); renderResultsTable(s); renderStudentList(); });
+  });
+}
+
+function renderMockGrid(s){
+  const grid = document.getElementById('mockGrid');
+  grid.innerHTML = s.mocks.map(m => `
+    <div class="mock-card" data-order="${m.order}">
+      <h4>第${m.order}回模試</h4>
+      <div class="score-line">
+        <input type="date" class="m-date" value="${escapeAttr(m.date)}">
+        <input type="number" class="m-score" value="${escapeAttr(m.score)}" placeholder="5科目合計点">
+      </div>
+      <div class="judg-list"></div>
+      <button class="btn small add-judg" ${m.judgments.length>=4?'disabled':''}>＋ 志望校の判定を追加</button>
+    </div>
+  `).join('');
+
+  grid.querySelectorAll('.mock-card').forEach(card=>{
+    const order = Number(card.dataset.order);
+    const m = s.mocks.find(x=>x.order===order);
+    card.querySelector('.m-date').addEventListener('input', e=>{ m.date=e.target.value; scheduleSave(); });
+    card.querySelector('.m-score').addEventListener('input', e=>{ m.score=e.target.value; scheduleSave(); });
+    renderJudgList(card, m, s);
+    card.querySelector('.add-judg').addEventListener('click', ()=>{
+      if(m.judgments.length>=4) return;
+      m.judgments.push({ id:uid(), highSchool:'', rank:'B' });
+      scheduleSave(); renderMockGrid(s);
+    });
+  });
+}
+
+function renderJudgList(card, m, s){
+  const list = card.querySelector('.judg-list');
+  list.innerHTML = m.judgments.map(j=>`
+    <div class="judg-row" data-id="${j.id}">
+      <input type="text" class="j-school" value="${escapeAttr(j.highSchool)}" placeholder="志望校名">
+      <select class="j-rank">${RANKS.map(r=>`<option value="${r}" ${r===j.rank?'selected':''}>${r}</option>`).join('')}</select>
+      <button class="icon-btn del">✕</button>
+    </div>`).join('');
+  list.querySelectorAll('.judg-row').forEach(row=>{
+    const id = row.dataset.id;
+    const j = m.judgments.find(x=>x.id===id);
+    row.querySelector('.j-school').addEventListener('input', e=>{ j.highSchool=e.target.value; scheduleSave(); });
+    row.querySelector('.j-rank').addEventListener('change', e=>{ j.rank=e.target.value; scheduleSave(); });
+    row.querySelector('.del').addEventListener('click', ()=>{ m.judgments=m.judgments.filter(x=>x.id!==id); scheduleSave(); renderMockGrid(s); });
+  });
+}
+
+/* ---------- Analysis tab ---------- */
+document.getElementById('searchBtn').addEventListener('click', runAnalysis);
+document.getElementById('schoolSearch').addEventListener('keydown', e=>{ if(e.key==='Enter') runAnalysis(); });
+
+function runAnalysis(){
+  const q = document.getElementById('schoolSearch').value.trim();
+  const box = document.getElementById('analysisResult');
+  if(!q){ box.innerHTML = ''; return; }
+  const matchesSchool = (name) => name && name.includes(q);
+
+  const passed = students.filter(s => s.results.some(r => r.result==='合格' && matchesSchool(r.highSchool)));
+  const failed = students.filter(s => s.results.some(r => r.result==='不合格' && matchesSchool(r.highSchool)) && !passed.includes(s));
+
+  if(passed.length===0 && failed.length===0){
+    box.innerHTML = `<p style="color:var(--ink-soft);">「${escapeHtml(q)}」を含む高校の結果を持つ生徒が見つかりませんでした。</p>`;
+    return;
+  }
+
+  // aggregate stats per mock order among passed students who have a judgment for this school
+  const perOrderScores = {1:[],2:[],3:[],4:[]};
+  const perOrderRanks = {1:[],2:[],3:[],4:[]};
+  passed.forEach(s=>{
+    s.mocks.forEach(m=>{
+      const j = m.judgments.find(x=>matchesSchool(x.highSchool));
+      if(j && m.score!=='' && m.score!=null){
+        perOrderScores[m.order].push(Number(m.score));
+        perOrderRanks[m.order].push(j.rank);
+      }
+    });
+  });
+
+  const statCards = [1,2,3,4].map(o=>{
+    const arr = perOrderScores[o];
+    if(arr.length===0) return `<div class="stat-card"><div class="label">第${o}回模試</div><div class="value" style="font-size:13px;color:var(--ink-soft);">データなし</div></div>`;
+    const min=Math.min(...arr), max=Math.max(...arr), avg=Math.round(arr.reduce((a,b)=>a+b,0)/arr.length);
+    return `<div class="stat-card"><div class="label">第${o}回模試（合格者 n=${arr.length}）</div><div class="value">平均${avg}点</div><div style="font-size:11.5px;color:var(--ink-soft);margin-top:2px;">範囲 ${min}〜${max}点</div></div>`;
+  }).join('');
+
+  const passCards = passed.map((s,i)=>studentAnalysisCard(s, students.indexOf(s), matchesSchool, true)).join('');
+
+  const showFailedId = 'showFailed_'+Math.random().toString(36).slice(2);
+  let failedHtml = '';
+  if(failed.length>0){
+    failedHtml = `
+      <div class="toggle-line">
+        <label><input type="checkbox" id="${showFailedId}"> 不合格だった生徒（n=${failed.length}）も表示する</label>
+      </div>
+      <div id="failedCards" style="display:none;">
+        ${failed.map(s=>studentAnalysisCard(s, students.indexOf(s), matchesSchool, false)).join('')}
+      </div>`;
+  }
+
+  box.innerHTML = `
+    <h3 style="margin-bottom:12px;">「${escapeHtml(q)}」合格者の模試成績推移</h3>
+    <div class="stat-cards">${statCards}</div>
+    ${passCards}
+    ${failedHtml}
+  `;
+
+  if(failed.length>0){
+    document.getElementById(showFailedId).addEventListener('change', e=>{
+      document.getElementById('failedCards').style.display = e.target.checked ? 'block' : 'none';
+    });
+  }
+}
+
+function studentAnalysisCard(s, idx, matchesSchool, isPass){
+  const name = studentDisplayName(s, idx);
+  const testsRows = s.tests.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''))
+    .map(t=>`<tr><td>${escapeHtml(t.date||'-')}</td><td>${escapeHtml(t.juniorHigh||'-')}</td><td>${escapeHtml(t.testName||'-')}</td><td class="mono">${escapeHtml(String(t.score||'-'))}</td></tr>`).join('');
+  const mockRows = s.mocks.map(m=>{
+    const j = m.judgments.find(x=>matchesSchool(x.highSchool));
+    const rankHtml = j ? `<span class="rank-badge" style="background:${RANK_COLOR[j.rank]}22;color:${RANK_COLOR[j.rank]};">${j.rank}</span>` : '-';
+    return `<tr><td>第${m.order}回</td><td>${escapeHtml(m.date||'-')}</td><td class="mono">${escapeHtml(String(m.score||'-'))}</td><td>${rankHtml}</td></tr>`;
+  }).join('');
+  return `<div class="student-analysis-card">
+    <h4>${escapeHtml(name)} <span class="chip ${isPass?'pass':'fail'}" style="margin-left:8px;">${isPass?'合格':'不合格'}</span></h4>
+    <table class="mini-table">
+      <thead><tr><th>実施日</th><th>中学校</th><th>テスト名</th><th>5科目合計</th></tr></thead>
+      <tbody>${testsRows || '<tr><td colspan="4" style="color:var(--ink-soft);">記録なし</td></tr>'}</tbody>
+    </table>
+    <table class="mini-table">
+      <thead><tr><th>模試</th><th>実施日</th><th>5科目合計</th><th>当該校 判定</th></tr></thead>
+      <tbody>${mockRows}</tbody>
+    </table>
+  </div>`;
+}
+
+/* ---------- Data management ---------- */
+document.getElementById('exportJsonBtn').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(students, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'student-tracker-backup.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('jsonImportBtn').addEventListener('click', ()=>{
+  const msg = document.getElementById('jsonImportMsg');
+  try{
+    const data = JSON.parse(document.getElementById('jsonImportArea').value);
+    if(!Array.isArray(data)) throw new Error('配列形式である必要があります');
+    data.forEach(incoming=>{
+      const existingIdx = students.findIndex(s=>s.id===incoming.id);
+      if(existingIdx>=0) students[existingIdx] = incoming; else students.push(incoming);
+    });
+    scheduleSave(); renderStudentList(); renderStudentDetail();
+    msg.textContent = `${data.length}件を読み込みました。`; msg.className='import-msg ok';
+  }catch(e){ msg.textContent = '読み込みに失敗しました：'+e.message; msg.className='import-msg err'; }
+});
+
+function findOrCreateByLabel(label){
+  let s = students.find(x=>x.label===label);
+  if(!s){ s = blankStudent(); s.label = label; students.push(s); }
+  return s;
+}
+
+function parseCsvLines(text){
+  return text.split('\n').map(l=>l.trim()).filter(l=>l.length>0).map(l=>l.split(',').map(c=>c.trim()));
+}
+
+document.getElementById('testImportBtn').addEventListener('click', ()=>{
+  const msg = document.getElementById('testImportMsg');
+  try{
+    const rows = parseCsvLines(document.getElementById('testImportArea').value);
+    let count=0;
+    rows.forEach(cols=>{
+      const [label, juniorHigh, testName, date, score] = cols;
+      if(!label) return;
+      const s = findOrCreateByLabel(label);
+      s.tests.push({ id:uid(), juniorHigh:juniorHigh||'', testName:testName||'', date:date||'', score:score||'' });
+      count++;
+    });
+    scheduleSave(); renderStudentList(); renderStudentDetail();
+    msg.textContent = `${count}件のテスト成績を取り込みました。`; msg.className='import-msg ok';
+  }catch(e){ msg.textContent='取り込みに失敗しました：'+e.message; msg.className='import-msg err'; }
+});
+
+document.getElementById('mockImportBtn').addEventListener('click', ()=>{
+  const msg = document.getElementById('mockImportMsg');
+  try{
+    const rows = parseCsvLines(document.getElementById('mockImportArea').value);
+    let count=0;
+    rows.forEach(cols=>{
+      const [label, orderStr, date, score, ...rest] = cols;
+      if(!label) return;
+      const order = Number(orderStr);
+      if(![1,2,3,4].includes(order)) return;
+      const s = findOrCreateByLabel(label);
+      const m = s.mocks.find(x=>x.order===order);
+      m.date = date||''; m.score = score||'';
+      const judgments = [];
+      for(let i=0;i<rest.length;i+=2){
+        const hs = rest[i], rk = (rest[i+1]||'').toUpperCase();
+        if(hs && RANKS.includes(rk)) judgments.push({id:uid(), highSchool:hs, rank:rk});
+      }
+      m.judgments = judgments.slice(0,4);
+      count++;
+    });
+    scheduleSave(); renderStudentList(); renderStudentDetail();
+    msg.textContent = `${count}件の模試成績を取り込みました。`; msg.className='import-msg ok';
+  }catch(e){ msg.textContent='取り込みに失敗しました：'+e.message; msg.className='import-msg err'; }
+});
+
+document.getElementById('resultImportBtn').addEventListener('click', ()=>{
+  const msg = document.getElementById('resultImportMsg');
+  try{
+    const rows = parseCsvLines(document.getElementById('resultImportArea').value);
+    let count=0;
+    rows.forEach(cols=>{
+      const [label, highSchool, result] = cols;
+      if(!label || !highSchool) return;
+      const s = findOrCreateByLabel(label);
+      s.results.push({ id:uid(), highSchool, result: result==='不合格' ? '不合格' : '合格' });
+      count++;
+    });
+    scheduleSave(); renderStudentList(); renderStudentDetail();
+    msg.textContent = `${count}件の入試結果を取り込みました。`; msg.className='import-msg ok';
+  }catch(e){ msg.textContent='取り込みに失敗しました：'+e.message; msg.className='import-msg err'; }
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(confirm('本当にすべてのデータを削除しますか？この操作は取り消せません。')){
+    students = [];
+    currentStudentId = null;
+    scheduleSave(); renderStudentList(); renderStudentDetail();
+  }
+});
+
+/* ---------- utils ---------- */
+function escapeHtml(str){
+  return String(str==null?'':str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(str){ return escapeHtml(str); }
+
+loadData();
+</script>
+</body>
+</html>
