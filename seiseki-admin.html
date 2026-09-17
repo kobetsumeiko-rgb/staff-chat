@@ -403,7 +403,7 @@ function renderStudentDetail(){
     <section class="block">
       <h3>入試結果</h3>
       <table class="rows" id="resultsTable">
-        <thead><tr><th style="width:60%">高校名</th><th style="width:25%">結果</th><th></th></tr></thead>
+        <thead><tr><th style="width:40%">高校名</th><th style="width:18%">結果</th><th style="width:22%">選抜区分</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
       <button class="btn small" id="addResultBtn" style="margin-top:8px;">＋ 高校を追加</button>
@@ -431,7 +431,7 @@ function renderStudentDetail(){
 
   renderResultsTable(s);
   document.getElementById('addResultBtn').addEventListener('click', ()=>{
-    s.results.push({ id:uid(), highSchool:'', result:'合格' });
+    s.results.push({ id:uid(), highSchool:'', result:'合格', selectionType:'' });
     scheduleSave(); renderResultsTable(s);
   });
 }
@@ -467,14 +467,22 @@ function renderResultsTable(s){
         <option value="合格" ${r.result==='合格'?'selected':''}>合格</option>
         <option value="不合格" ${r.result==='不合格'?'selected':''}>不合格</option>
       </select></td>
+      <td><select class="sel-type">
+        <option value="" ${!r.selectionType?'selected':''}>未設定</option>
+        <option value="前期選抜" ${r.selectionType==='前期選抜'?'selected':''}>前期選抜</option>
+        <option value="後期選抜" ${r.selectionType==='後期選抜'?'selected':''}>後期選抜</option>
+        <option value="推薦" ${r.selectionType==='推薦'?'selected':''}>推薦</option>
+        <option value="一般" ${r.selectionType==='一般'?'selected':''}>一般</option>
+      </select></td>
       <td><button class="icon-btn del">✕</button></td>
-    </tr>`).join('') || '<tr><td colspan="3" style="color:var(--ink-soft);padding:12px 8px;">まだ結果が登録されていません。</td></tr>';
+    </tr>`).join('') || '<tr><td colspan="4" style="color:var(--ink-soft);padding:12px 8px;">まだ結果が登録されていません。</td></tr>';
 
   tbody.querySelectorAll('tr[data-id]').forEach(tr=>{
     const id = tr.dataset.id;
     const r = s.results.find(x=>x.id===id);
     tr.querySelector('.hs').addEventListener('change', e=>{ r.highSchool=e.target.value; scheduleSave(); renderStudentList(); });
     tr.querySelector('.res').addEventListener('change', e=>{ r.result=e.target.value; scheduleSave(); renderStudentList(); });
+    tr.querySelector('.sel-type').addEventListener('change', e=>{ r.selectionType=e.target.value; scheduleSave(); });
     tr.querySelector('.del').addEventListener('click', ()=>{ s.results=s.results.filter(x=>x.id!==id); scheduleSave(); renderResultsTable(s); renderStudentList(); });
   });
 }
