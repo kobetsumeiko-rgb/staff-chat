@@ -255,11 +255,11 @@ const SCHOOLS = [
   '長野高校','屋代高校（理数）','屋代高校（普通）','長野吉田高校','長野西高校（国際）','長野西高校（普通）',
   '篠ノ井高校','市立長野高校','長野東高校','長野南高校','松代高校','屋代南高校',
   '須坂創成高校（商業/工学）','須坂創成高校（園芸）','更級農業高校','長野高専',
-  '長野工業高校（電気）','長野工業高校（情報）','長野工業高校（物質）','長野工業高校（建築）','長野工業高校（機械）','長野工業高校（土木）',
+  '長野工業高校（電気）','長野工業高校（情報）','長野工業高校（物質）','長野工業高校（建築）','長野工業高校（機械）','長野工業高校（土木）','長野商業高校',
   '上田高校','須坂高校','長野日大高校（特進）','長野日大高校（進学）',
   '文化学園長野高校（特選）','文化学園長野高校（特進）','文化学園長野高校（進学）',
   '上田西高校（特進）','上田西高校（進学）','長野清泉女学院（特進）','長野清泉女学院（進学）',
-  '長野俊英（アドバンス・セレクト）','長野商業'
+  '長野俊英（アドバンス・セレクト）'
 ];
 function schoolOptions(selected){
   return '<option value="">選択してください</option>' + SCHOOLS.map(sc=>`<option value="${escapeAttr(sc)}" ${sc===selected?'selected':''}>${escapeHtml(sc)}</option>`).join('');
@@ -403,7 +403,7 @@ function renderStudentDetail(){
     <section class="block">
       <h3>入試結果</h3>
       <table class="rows" id="resultsTable">
-        <thead><tr><th style="width:40%">高校名</th><th style="width:18%">結果</th><th style="width:22%">選抜区分</th><th></th></tr></thead>
+        <thead><tr><th style="width:30%">高校名</th><th style="width:14%">結果</th><th style="width:18%">選抜区分</th><th style="width:20%">部活（前期選抜のみ）</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
       <button class="btn small" id="addResultBtn" style="margin-top:8px;">＋ 高校を追加</button>
@@ -431,7 +431,7 @@ function renderStudentDetail(){
 
   renderResultsTable(s);
   document.getElementById('addResultBtn').addEventListener('click', ()=>{
-    s.results.push({ id:uid(), highSchool:'', result:'合格', selectionType:'' });
+    s.results.push({ id:uid(), highSchool:'', result:'合格', selectionType:'', club:'' });
     scheduleSave(); renderResultsTable(s);
   });
 }
@@ -474,15 +474,25 @@ function renderResultsTable(s){
         <option value="推薦" ${r.selectionType==='推薦'?'selected':''}>推薦</option>
         <option value="一般" ${r.selectionType==='一般'?'selected':''}>一般</option>
       </select></td>
+      <td>${r.selectionType==='前期選抜'
+        ? `<input type="text" class="club" value="${escapeAttr(r.club)}" placeholder="例:サッカー部">`
+        : `<span style="color:var(--ink-soft);font-size:12px;">-</span>`}</td>
       <td><button class="icon-btn del">✕</button></td>
-    </tr>`).join('') || '<tr><td colspan="4" style="color:var(--ink-soft);padding:12px 8px;">まだ結果が登録されていません。</td></tr>';
+    </tr>`).join('') || '<tr><td colspan="5" style="color:var(--ink-soft);padding:12px 8px;">まだ結果が登録されていません。</td></tr>';
 
   tbody.querySelectorAll('tr[data-id]').forEach(tr=>{
     const id = tr.dataset.id;
     const r = s.results.find(x=>x.id===id);
     tr.querySelector('.hs').addEventListener('change', e=>{ r.highSchool=e.target.value; scheduleSave(); renderStudentList(); });
     tr.querySelector('.res').addEventListener('change', e=>{ r.result=e.target.value; scheduleSave(); renderStudentList(); });
-    tr.querySelector('.sel-type').addEventListener('change', e=>{ r.selectionType=e.target.value; scheduleSave(); });
+    tr.querySelector('.sel-type').addEventListener('change', e=>{
+      r.selectionType=e.target.value;
+      if(r.selectionType!=='前期選抜') r.club='';
+      scheduleSave();
+      renderResultsTable(s);
+    });
+    const clubInput = tr.querySelector('.club');
+    if(clubInput) clubInput.addEventListener('input', e=>{ r.club=e.target.value; scheduleSave(); });
     tr.querySelector('.del').addEventListener('click', ()=>{ s.results=s.results.filter(x=>x.id!==id); scheduleSave(); renderResultsTable(s); renderStudentList(); });
   });
 }
