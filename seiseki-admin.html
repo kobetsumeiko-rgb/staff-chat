@@ -317,7 +317,7 @@ function scheduleSave(){
       setSyncStatus('err', '保存に失敗しました（通信環境を確認してください）');
       console.error('保存に失敗しました', e);
     }
-  }, 600);
+  }, 5000);
 }
 
 function studentDisplayName(s, idx){
